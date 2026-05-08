@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import com.example.demo.enumtype.RoomStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
@@ -28,6 +29,15 @@ public class Room {
     @NotBlank(message = "Mô tả không được để trống")
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    private RoomStatus status;
+
+    // ===== Constructor =====
+
+    public Room() {
+        this.status = RoomStatus.AVAILABLE;
+    }
+
     // ===== Getter Setter =====
 
     public Long getId() {
@@ -54,6 +64,10 @@ public class Room {
         return description;
     }
 
+    public RoomStatus getStatus() {
+        return status;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -76,5 +90,9 @@ public class Room {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setStatus(RoomStatus status) {
+        this.status = status;
     }
 }

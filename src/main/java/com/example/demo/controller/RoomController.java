@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Room;
+import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.service.RoomService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -46,6 +47,7 @@ public class RoomController {
         if (result.hasErrors()) {
             return "create";
         }
+        room.setStatus(RoomStatus.AVAILABLE);
 
         service.save(room);
 
@@ -75,6 +77,10 @@ public class RoomController {
             model.addAttribute("isEdit", true);
             return "create";
         }
+
+        Room oldRoom = service.findById(room.getId());
+
+        room.setStatus(oldRoom.getStatus());
 
         service.save(room);
 

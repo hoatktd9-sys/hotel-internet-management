@@ -8,6 +8,7 @@
           rel="stylesheet">
 
     <style>
+
         body{
             background:#f4f6f9;
         }
@@ -16,19 +17,38 @@
             border:none;
             border-radius:15px;
         }
+
+        .status-available{
+            color:green;
+            font-weight:bold;
+        }
+
+        .status-occupied{
+            color:red;
+            font-weight:bold;
+        }
+
+        .status-cleaning{
+            color:orange;
+            font-weight:bold;
+        }
+
     </style>
+
 </head>
 <body>
 
 <div class="container mt-5">
 
     <div class="d-flex justify-content-between mb-3">
+
         <h2>Quản lý phòng internet</h2>
 
         <a href="/create"
            class="btn btn-success">
             Thêm phòng
         </a>
+
     </div>
 
     <div class="card shadow">
@@ -40,13 +60,16 @@
                 <thead class="table-dark">
 
                 <tr>
+
                     <th>ID</th>
                     <th>Tên phòng</th>
                     <th>Giá</th>
                     <th>Số máy</th>
                     <th>Loại phòng</th>
+                    <th>Trạng thái</th>
                     <th>Mô tả</th>
                     <th>Chức năng</th>
+
                 </tr>
 
                 </thead>
@@ -64,6 +87,27 @@
                     <td th:text="${r.computerCount}"></td>
 
                     <td th:text="${r.roomType}"></td>
+
+                    <!-- STATUS -->
+
+                    <td th:switch="${r.status}">
+
+                        <span th:case="'AVAILABLE'"
+                              class="status-available">
+                            Trống
+                        </span>
+
+                        <span th:case="'OCCUPIED'"
+                              class="status-occupied">
+                            Đang sử dụng
+                        </span>
+
+                        <span th:case="'CLEANING'"
+                              class="status-cleaning">
+                            Đang dọn dẹp
+                        </span>
+
+                    </td>
 
                     <td th:text="${r.description}"></td>
 

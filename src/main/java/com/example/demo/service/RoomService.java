@@ -20,6 +20,11 @@ public class RoomService {
         return repository.findAll();
     }
 
+    // ===== THÊM METHOD GETALL THEO YÊU CẦU =====
+    public List<Room> getAll() {
+        return repository.findAll();
+    }
+
     // ===== TÌM THEO ID =====
     public Room findById(Long id) {
         return repository.findById(id).orElseThrow();

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Check-in khách hàng</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <style>
+
+        body{
+            background:#f4f6f9;
+            padding:40px;
+        }
+
+        .card{
+            max-width:700px;
+            margin:auto;
+            border:none;
+            border-radius:15px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="card shadow">
+
+    <div class="card-body p-4">
+
+        <h2 class="mb-4 text-center">
+            Check-in khách hàng
+        </h2>
+
+        <form action="/checkin/save"
+              method="post">
+
+            <!-- KHÁCH -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Chọn khách hàng
+                </label>
+
+                <select name="customerId"
+                        class="form-select"
+                        required>
+
+                    <option value="">
+                        -- Chọn khách --
+                    </option>
+
+                    <option th:each="c : ${customers}"
+                            th:value="${c.id}"
+                            th:text="${c.fullName + ' - ' + c.phone}">
+                    </option>
+
+                </select>
+
+            </div>
+
+            <!-- PHÒNG -->
+
+            <div class="mb-4">
+
+                <label class="form-label">
+                    Chọn phòng
+                </label>
+
+                <select name="roomId"
+                        class="form-select"
+                        required>
+
+                    <option value="">
+                        -- Chọn phòng --
+                    </option>
+
+                    <option th:each="r : ${rooms}"
+                            th:if="${r.status.name() == 'AVAILABLE'}"
+                            th:value="${r.id}"
+                            th:text="${r.roomName + ' - ' + r.roomType}">
+                    </option>
+
+                </select>
+
+            </div>
+
+            <!-- BUTTON -->
+
+            <div class="d-flex gap-2">
+
+                <button type="submit"
+                        class="btn btn-success">
+
+                    Xác nhận Check-in
+
+                </button>
+
+                <a href="/rooms"
+                   class="btn btn-secondary">
+
+                    Quay lại
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

@@ -15,17 +15,22 @@ public class CustomerService {
         this.repository = repository;
     }
 
-    // lấy toàn bộ khách hàng
+    // ===== LẤY TOÀN BỘ =====
     public List<Customer> findAll() {
         return repository.findAll();
     }
 
-    // Thêm method getAll theo yêu cầu
+    // ===== GET ALL =====
     public List<Customer> getAll() {
         return repository.findAll();
     }
 
-    // lưu khách hàng
+    // ===== TÌM THEO ID =====
+    public Customer findById(Long id) {
+        return repository.findById(id).orElseThrow();
+    }
+
+    // ===== LƯU =====
     public void save(Customer customer) {
         repository.save(customer);
     }

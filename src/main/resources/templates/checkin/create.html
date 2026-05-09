@@ -1,123 +1,86 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
-
     <meta charset="UTF-8">
+    <title>Check In</title>
 
-    <title>Check-in khách hàng</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet">
-
-    <style>
-
-        body{
-            background:#f4f6f9;
-            padding:40px;
-        }
-
-        .card{
-            max-width:700px;
-            margin:auto;
-            border:none;
-            border-radius:15px;
-        }
-
-    </style>
-
 </head>
 
 <body>
 
-<div class="card shadow">
+<div class="container mt-5">
 
-    <div class="card-body p-4">
+    <h2 class="mb-4">Check In</h2>
 
-        <h2 class="mb-4 text-center">
-            Check-in khách hàng
-        </h2>
+    <form th:action="@{/checkin/save}" method="post">
 
-        <form action="/checkin/save"
-              method="post">
+        <!-- CHỌN KHÁCH -->
+        <div class="mb-3">
 
-            <!-- KHÁCH -->
+            <label class="form-label">
+                Khách hàng
+            </label>
 
-            <div class="mb-3">
+            <select name="customerId"
+                    class="form-select"
+                    required>
 
-                <label class="form-label">
-                    Chọn khách hàng
-                </label>
+                <option value="">
+                    -- Chọn khách --
+                </option>
 
-                <select name="customerId"
-                        class="form-select"
-                        required>
+                <option th:each="c : ${customers}"
+                        th:value="${c.id}"
+                        th:text="${c.fullName}">
+                </option>
 
-                    <option value="">
-                        -- Chọn khách --
-                    </option>
+            </select>
 
-                    <option th:each="c : ${customers}"
-                            th:value="${c.id}"
-                            th:text="${c.fullName + ' - ' + c.phone}">
-                    </option>
+        </div>
 
-                </select>
+        <!-- CHỌN PHÒNG -->
+        <div class="mb-3">
 
-            </div>
+            <label class="form-label">
+                Phòng
+            </label>
 
-            <!-- PHÒNG -->
+            <select name="roomId"
+                    class="form-select"
+                    required>
 
-            <div class="mb-4">
+                <option value="">
+                    -- Chọn phòng --
+                </option>
 
-                <label class="form-label">
-                    Chọn phòng
-                </label>
+                <option th:each="r : ${rooms}"
+                        th:value="${r.id}"
+                        th:text="${r.roomName}">
+                </option>
 
-                <select name="roomId"
-                        class="form-select"
-                        required>
+            </select>
 
-                    <option value="">
-                        -- Chọn phòng --
-                    </option>
+        </div>
 
-                    <option th:each="r : ${rooms}"
-                            th:if="${r.status.name() == 'AVAILABLE'}"
-                            th:value="${r.id}"
-                            th:text="${r.roomName + ' - ' + r.roomType}">
-                    </option>
+        <button type="submit"
+                class="btn btn-primary">
 
-                </select>
+            Check In
 
-            </div>
+        </button>
 
-            <!-- BUTTON -->
+        <a href="/rooms"
+           class="btn btn-secondary">
 
-            <div class="d-flex gap-2">
+            Quay lại
 
-                <button type="submit"
-                        class="btn btn-success">
+        </a>
 
-                    Xác nhận Check-in
-
-                </button>
-
-                <a href="/rooms"
-                   class="btn btn-secondary">
-
-                    Quay lại
-
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
+    </form>
 
 </div>
 
 </body>
-
 </html>

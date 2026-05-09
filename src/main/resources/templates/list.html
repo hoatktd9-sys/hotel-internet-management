@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
+
     <title>Quản lý phòng internet</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -23,7 +25,7 @@
 
         .room-grid{
             display:grid;
-            grid-template-columns:repeat(auto-fill, minmax(250px,1fr));
+            grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
             gap:20px;
         }
 
@@ -40,23 +42,19 @@
         }
 
         .room-name{
-            font-size:22px;
+            font-size:24px;
             font-weight:bold;
-            margin-bottom:10px;
-        }
-
-        .room-price{
-            font-size:18px;
-            margin-bottom:10px;
+            margin-bottom:15px;
         }
 
         .room-info{
-            margin-bottom:8px;
+            margin-bottom:10px;
+            font-size:17px;
         }
 
         .status{
             font-weight:bold;
-            padding:5px 10px;
+            padding:6px 14px;
             border-radius:20px;
             display:inline-block;
             margin-bottom:15px;
@@ -77,23 +75,30 @@
             color:#856404;
         }
 
-        .btn-group{
+        .btn-group-custom{
             display:flex;
+            flex-wrap:wrap;
             gap:10px;
+            margin-top:15px;
         }
 
     </style>
 
 </head>
+
 <body>
 
 <div class="container">
 
+    <!-- HEADER -->
+
     <div class="top-bar">
 
-        <h2>Quản lý phòng internet</h2>
+        <h1>Quản lý phòng internet</h1>
 
         <div class="d-flex gap-2">
+
+            <!-- THÊM PHÒNG -->
 
             <a href="/create"
                class="btn btn-success">
@@ -102,6 +107,8 @@
 
             </a>
 
+            <!-- CHECK-IN -->
+
             <a href="/checkin"
                class="btn btn-primary">
 
@@ -109,71 +116,148 @@
 
             </a>
 
+            <!-- LỊCH SỬ -->
+
+            <a href="/checkin/history"
+               class="btn btn-dark">
+
+                Lịch sử
+
+            </a>
+
         </div>
 
     </div>
+
+    <!-- DANH SÁCH PHÒNG -->
 
     <div class="room-grid">
 
         <div class="room-card"
              th:each="r : ${list}">
 
+            <!-- TÊN PHÒNG -->
+
             <div class="room-name"
                  th:text="${r.roomName}">
             </div>
 
-            <div class="room-price">
-                Giá:
-                <span th:text="${r.price}"></span> VNĐ/giờ
-            </div>
+            <!-- GIÁ -->
 
             <div class="room-info">
-                Số máy:
+
+                <b>Giá:</b>
+
+                <span th:text="${#numbers.formatDecimal(r.price,1,0)}"></span>
+
+                VNĐ / giờ
+
+            </div>
+
+            <!-- SỐ MÁY -->
+
+            <div class="room-info">
+
+                <b>Số máy:</b>
+
                 <span th:text="${r.computerCount}"></span>
+
             </div>
 
+            <!-- LOẠI -->
+
             <div class="room-info">
-                Loại:
+
+                <b>Loại:</b>
+
                 <span th:text="${r.roomType}"></span>
+
             </div>
 
             <!-- STATUS -->
 
             <div>
 
+                <!-- AVAILABLE -->
+
                 <span th:if="${r.status.name() == 'AVAILABLE'}"
                       class="status available">
+
                     Trống
+
                 </span>
+
+                <!-- OCCUPIED -->
 
                 <span th:if="${r.status.name() == 'OCCUPIED'}"
                       class="status occupied">
+
                     Đang sử dụng
+
                 </span>
+
+                <!-- CLEANING -->
 
                 <span th:if="${r.status.name() == 'CLEANING'}"
                       class="status cleaning">
+
                     Đang dọn dẹp
+
                 </span>
 
             </div>
 
+            <!-- MÔ TẢ -->
+
             <div class="room-info">
+
                 <b>Mô tả:</b>
+
                 <span th:text="${r.description}"></span>
+
             </div>
 
-            <div class="btn-group mt-3">
+            <!-- BUTTON -->
+
+            <div class="btn-group-custom">
+
+                <!-- SỬA -->
 
                 <a th:href="@{/edit/{id}(id=${r.id})}"
-                   class="btn btn-warning btn-sm">
+                   class="btn btn-warning">
+
                     Sửa
+
                 </a>
 
-                <a th:href="@{/delete/{id}(id=${r.id})}"
-                   class="btn btn-danger btn-sm"
+                <!-- XÓA -->
+
+                <a th:href="@{/room/delete/{id}(id=${r.id})}"
+                   class="btn btn-danger"
                    onclick="return confirm('Bạn có chắc muốn xóa?')">
+
                     Xóa
+
+                </a>
+
+                <!-- CHECK-OUT -->
+
+                <a th:if="${r.status.name() == 'OCCUPIED'}"
+                   th:href="@{/checkout/{id}(id=${r.id})}"
+                   class="btn btn-primary">
+
+                    Check-out
+
+                </a>
+
+                <!-- HOÀN TẤT DỌN DẸP -->
+
+                <a th:if="${r.status.name() == 'CLEANING'}"
+                   th:href="@{/room/available/{id}(id=${r.id})}"
+                   class="btn btn-success">
+
+                    Hoàn tất dọn dẹp
+
                 </a>
 
             </div>
@@ -185,4 +269,5 @@
 </div>
 
 </body>
+
 </html>

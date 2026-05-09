@@ -9,4 +9,7 @@ import org.springframework.stereotype.Repository;
 public interface CheckInRepository
         extends JpaRepository<CheckIn, Long> {
 
+    // tìm check-in đang hoạt động theo room id
+    CheckIn findByRoomIdAndCheckOutTimeIsNull(Long roomId);
+
 }

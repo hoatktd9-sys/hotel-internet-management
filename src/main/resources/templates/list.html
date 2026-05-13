@@ -107,6 +107,18 @@
 
             </a>
 
+            <!-- QUẢN LÝ LOẠI PHÒNG -->
+
+            <a href="/room-types"
+               class="btn btn-info text-white">
+
+                Quản lý loại phòng
+
+            </a>
+
+            <!-- QUẢN LÝ KHÁCH HÀNG -->
+            <a href="/customers" class="btn btn-secondary text-white">Quản lý khách hàng</a>
+
             <!-- CHECK-IN -->
 
             <a href="/checkin"
@@ -136,8 +148,12 @@
         <div class="room-card"
              th:each="r : ${list}">
 
+            <!-- HÌNH ẢNH -->
+            <div th:if="${r.image != null}" style="margin-bottom: 15px;">
+                <img th:src="${r.image}" alt="Room Image" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px;">
+            </div>
+            
             <!-- TÊN PHÒNG -->
-
             <div class="room-name"
                  th:text="${r.roomName}">
             </div>
@@ -170,7 +186,7 @@
 
                 <b>Loại:</b>
 
-                <span th:text="${r.roomType}"></span>
+                <span th:text="${r.roomType != null ? r.roomType.name : ''}"></span>
 
             </div>
 

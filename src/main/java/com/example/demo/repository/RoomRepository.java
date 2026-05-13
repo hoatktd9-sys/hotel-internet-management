@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
+    boolean existsByRoomName(String roomName);
+
     // ===== SEARCH THEO GIÁ PHÒNG =====
     @Query("""
             SELECT r FROM Room r

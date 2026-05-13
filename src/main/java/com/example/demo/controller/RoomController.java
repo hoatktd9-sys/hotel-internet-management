@@ -3,8 +3,16 @@ package com.example.demo.controller;
 import com.example.demo.model.Room;
 import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.service.RoomService;
+import com.example.demo.service.RoomTypeService;
+import com.example.demo.model.RoomType;
 
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,9 +23,11 @@ import org.springframework.web.bind.annotation.*;
 public class RoomController {
 
     private final RoomService service;
+    private final RoomTypeService roomTypeService;
 
-    public RoomController(RoomService service) {
+    public RoomController(RoomService service, RoomTypeService roomTypeService) {
         this.service = service;
+        this.roomTypeService = roomTypeService;
     }
 
     // ===== HOME =====
@@ -46,6 +56,7 @@ public class RoomController {
                 "room",
                 new Room()
         );
+        model.addAttribute("roomTypes", roomTypeService.findAll());
 
         return "create";
     }
@@ -55,11 +66,32 @@ public class RoomController {
     public String save(
             @Valid @ModelAttribute("room") Room room,
             BindingResult result,
+            @RequestParam("imageFile") MultipartFile imageFile,
             Model model
     ) {
 
+        if (service.existsByRoomName(room.getRoomName())) {
+            result.rejectValue("roomName", "error.room", "Tên phòng đã tồn tại");
+        }
+
         if (result.hasErrors()) {
+            System.out.println("Validation errors: " + result.getAllErrors());
+            model.addAttribute("roomTypes", roomTypeService.findAll());
             return "create";
+        }
+        
+        try {
+            if (!imageFile.isEmpty()) {
+                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+                Path uploadPath = Paths.get("src/main/resources/static/images");
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Files.copy(imageFile.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                room.setImage("/images/" + fileName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         // mặc định phòng mới là AVAILABLE
@@ -76,6 +108,7 @@ public class RoomController {
                 "room",
                 new Room()
         );
+        model.addAttribute("roomTypes", roomTypeService.findAll());
 
         return "create";
     }
@@ -96,6 +129,7 @@ public class RoomController {
                 "isEdit",
                 true
         );
+        model.addAttribute("roomTypes", roomTypeService.findAll());
 
         return "create";
     }
@@ -105,8 +139,14 @@ public class RoomController {
     public String update(
             @Valid @ModelAttribute("room") Room room,
             BindingResult result,
+            @RequestParam("imageFile") MultipartFile imageFile,
             Model model
     ) {
+
+        Room oldRoom = service.findById(room.getId());
+        if (!oldRoom.getRoomName().equals(room.getRoomName()) && service.existsByRoomName(room.getRoomName())) {
+            result.rejectValue("roomName", "error.room", "Tên phòng đã tồn tại");
+        }
 
         if (result.hasErrors()) {
 
@@ -114,15 +154,28 @@ public class RoomController {
                     "isEdit",
                     true
             );
+            model.addAttribute("roomTypes", roomTypeService.findAll());
 
             return "create";
         }
 
-        // giữ nguyên trạng thái cũ
-        Room oldRoom =
-                service.findById(room.getId());
-
         room.setStatus(oldRoom.getStatus());
+        
+        try {
+            if (!imageFile.isEmpty()) {
+                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+                Path uploadPath = Paths.get("src/main/resources/static/images");
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Files.copy(imageFile.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                room.setImage("/images/" + fileName);
+            } else {
+                room.setImage(oldRoom.getImage());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         service.save(room);
 

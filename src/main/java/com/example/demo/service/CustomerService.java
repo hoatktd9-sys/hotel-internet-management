@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.model.Customer;
 import com.example.demo.repository.CustomerRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,23 +16,35 @@ public class CustomerService {
         this.repository = repository;
     }
 
-    // ===== LẤY TOÀN BỘ =====
+    // ===== LẤY TẤT CẢ =====
+
     public List<Customer> findAll() {
         return repository.findAll();
     }
 
-    // ===== GET ALL =====
-    public List<Customer> getAll() {
-        return repository.findAll();
-    }
-
     // ===== TÌM THEO ID =====
+
     public Customer findById(Long id) {
-        return repository.findById(id).orElseThrow();
+
+        return repository.findById(id)
+                .orElseThrow();
+
     }
 
     // ===== LƯU =====
+
     public void save(Customer customer) {
+
         repository.save(customer);
+
     }
+
+    // ===== XÓA =====
+
+    public void delete(Long id) {
+
+        repository.deleteById(id);
+
+    }
+
 }

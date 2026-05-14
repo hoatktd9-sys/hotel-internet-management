@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.model.Room;
 import com.example.demo.repository.RoomRepository;
 import org.springframework.stereotype.Service;
@@ -15,12 +16,12 @@ public class RoomService {
         this.repository = repository;
     }
 
-    // ===== LẤY DANH SÁCH =====
+    // ===== LẤY TOÀN BỘ PHÒNG =====
     public List<Room> findAll() {
         return repository.findAll();
     }
 
-    // ===== THÊM METHOD GETALL THEO YÊU CẦU =====
+    // ===== GET ALL =====
     public List<Room> getAll() {
         return repository.findAll();
     }
@@ -30,18 +31,57 @@ public class RoomService {
         return repository.findById(id).orElseThrow();
     }
 
-    // ===== LƯU =====
+    // ===== LƯU PHÒNG =====
     public void save(Room room) {
         repository.save(room);
     }
 
-    // ===== XÓA =====
+    // ===== XÓA PHÒNG =====
     public void delete(Long id) {
         repository.deleteById(id);
     }
 
-    // ===== TÌM KIẾM =====
+    // ===== SEARCH THEO GIÁ =====
     public List<Room> search(Double price) {
         return repository.search(price);
+    }
+
+    // ===== TÌM THEO TRẠNG THÁI =====
+    public List<Room> findByStatus(RoomStatus status) {
+        return repository.findByStatus(status);
+    }
+
+    // ===== TÌM THEO LOẠI PHÒNG =====
+    public List<Room> findByRoomType(String roomType) {
+        return repository.findByRoomType(roomType);
+    }
+
+    // ===== TÌM THEO TÊN PHÒNG =====
+    public List<Room> searchByName(String keyword) {
+        return repository.findByRoomNameContainingIgnoreCase(keyword);
+    }
+
+    // ===== ĐỔI TRẠNG THÁI =====
+    public void updateStatus(Long id, RoomStatus status) {
+
+        Room room = findById(id);
+
+        room.setStatus(status);
+
+        repository.save(room);
+    }
+
+    // ===== SEARCH NÂNG CAO (MỚI THÊM) =====
+    public List<Room> searchRooms(
+            String keyword,
+            RoomStatus status,
+            String roomType
+    ) {
+
+        return repository.searchRooms(
+                keyword,
+                status,
+                roomType
+        );
     }
 }

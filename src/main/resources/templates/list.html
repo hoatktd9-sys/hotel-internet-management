@@ -71,6 +71,11 @@
             color: #856404;
         }
 
+        .maintenance {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
         .btn-group-custom {
             display: flex;
             flex-wrap: wrap;
@@ -111,6 +116,114 @@
         </div>
     </div>
 
+    <!-- SEARCH + FILTER (ĐÃ CẬP NHẬT) -->
+    <div class="card p-3 mb-4 shadow-sm">
+
+        <form action="/rooms/search" method="get">
+
+            <div class="row g-2">
+
+                <!-- KEYWORD -->
+                <div class="col-md-4">
+                    <input type="text"
+                           name="keyword"
+                           class="form-control"
+                           placeholder="Tên / loại / mô tả..."
+                           th:value="${keyword}">
+                </div>
+
+                <!-- STATUS -->
+                <div class="col-md-3">
+                    <select name="status"
+                            class="form-select">
+
+                        <option value="">
+                            -- Tất cả trạng thái --
+                        </option>
+
+                        <option value="AVAILABLE">
+                            Trống
+                        </option>
+
+                        <option value="OCCUPIED">
+                            Đang sử dụng
+                        </option>
+
+                        <option value="CLEANING">
+                            Đang dọn dẹp
+                        </option>
+
+                        <option value="MAINTENANCE">
+                            Bảo trì
+                        </option>
+
+                    </select>
+                </div>
+
+                <!-- ROOM TYPE -->
+                <div class="col-md-3">
+                    <select name="roomType"
+                            class="form-select">
+
+                        <option value="">
+                            -- Tất cả loại phòng --
+                        </option>
+
+                        <option value="NORMAL">
+                            NORMAL
+                        </option>
+
+                        <option value="VIP">
+                            VIP
+                        </option>
+
+                    </select>
+                </div>
+
+                <!-- BUTTON -->
+                <div class="col-md-2 d-grid">
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Tìm kiếm
+                    </button>
+                </div>
+
+            </div>
+
+        </form>
+
+        <!-- FILTER NHANH -->
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+
+            <a href="/rooms"
+               class="btn btn-secondary">
+                Tất cả
+            </a>
+
+            <a href="/status/AVAILABLE"
+               class="btn btn-success">
+                Trống
+            </a>
+
+            <a href="/status/OCCUPIED"
+               class="btn btn-danger">
+                Đang sử dụng
+            </a>
+
+            <a href="/status/CLEANING"
+               class="btn btn-warning">
+                Đang dọn dẹp
+            </a>
+
+            <a href="/status/MAINTENANCE"
+               class="btn btn-info">
+                Bảo trì
+            </a>
+
+        </div>
+
+    </div>
+
     <!-- DANH SÁCH PHÒNG -->
     <div class="room-grid">
         <div class="room-card" th:each="r : ${list}">
@@ -138,9 +251,31 @@
 
             <!-- STATUS -->
             <div>
-                <span th:if="${r.status.name() == 'AVAILABLE'}" class="status available">Trống</span>
-                <span th:if="${r.status.name() == 'OCCUPIED'}" class="status occupied">Đang sử dụng</span>
-                <span th:if="${r.status.name() == 'CLEANING'}" class="status cleaning">Đang dọn dẹp</span>
+
+                <!-- AVAILABLE -->
+                <span th:if="${r.status.name() == 'AVAILABLE'}"
+                      class="status available">
+                    Trống
+                </span>
+
+                <!-- OCCUPIED -->
+                <span th:if="${r.status.name() == 'OCCUPIED'}"
+                      class="status occupied">
+                    Đang sử dụng
+                </span>
+
+                <!-- CLEANING -->
+                <span th:if="${r.status.name() == 'CLEANING'}"
+                      class="status cleaning">
+                    Đang dọn dẹp
+                </span>
+
+                <!-- MAINTENANCE -->
+                <span th:if="${r.status.name() == 'MAINTENANCE'}"
+                      class="status maintenance">
+                    Bảo trì
+                </span>
+
             </div>
 
             <!-- MÔ TẢ -->
@@ -151,20 +286,61 @@
 
             <!-- BUTTON -->
             <div class="btn-group-custom">
+
+                <!-- CHI TIẾT -->
+                <a th:href="@{/room/detail/{id}(id=${r.id})}"
+                   class="btn btn-info">
+                    Chi tiết
+                </a>
+
                 <!-- SỬA -->
-                <a th:href="@{/edit/{id}(id=${r.id})}" class="btn btn-warning">Sửa</a>
+                <a th:href="@{/edit/{id}(id=${r.id})}"
+                   class="btn btn-warning">
+                    Sửa
+                </a>
 
                 <!-- XÓA -->
-                <a th:href="@{/room/delete/{id}(id=${r.id})}" class="btn btn-danger"
-                   onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
+                <a th:href="@{/delete/{id}(id=${r.id})}"
+                   class="btn btn-danger"
+                   onclick="return confirm('Bạn có chắc muốn xóa?')">
+                    Xóa
+                </a>
 
                 <!-- CHECK-OUT -->
-                <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/checkout/{id}(id=${r.id})}"
-                   class="btn btn-primary">Check-out</a>
+                <a th:if="${r.status.name() == 'OCCUPIED'}"
+                   th:href="@{/checkout/{id}(id=${r.id})}"
+                   class="btn btn-primary">
+                    Check-out
+                </a>
 
-                <!-- HOÀN TẤT DỌN DẸP -->
-                <a th:if="${r.status.name() == 'CLEANING'}" th:href="@{/room/available/{id}(id=${r.id})}"
-                   class="btn btn-success">Hoàn tất dọn dẹp</a>
+                <!-- CHUYỂN DỌN DẸP -->
+                <a th:if="${r.status.name() == 'AVAILABLE'}"
+                   th:href="@{/change-status/{id}/CLEANING(id=${r.id})}"
+                   class="btn btn-warning">
+                    Dọn dẹp
+                </a>
+
+                <!-- HOÀT TẤT DỌN DẸP -->
+                <a th:if="${r.status.name() == 'CLEANING'}"
+                   th:href="@{/room/available/{id}(id=${r.id})}"
+                   class="btn btn-success">
+                    Hoàn tất dọn dẹp
+                </a>
+
+                <!-- CHUYỂN BẢO TRÌ -->
+                <a th:if="${r.status.name() == 'AVAILABLE'}"
+                   th:href="@{/change-status/{id}/MAINTENANCE(id=${r.id})}"
+                   class="btn btn-dark">
+                    Bảo trì
+                </a>
+
+                <!-- KẾT THÚC BẢO TRÌ -->
+                <a th:if="${r.status.name() == 'MAINTENANCE'}"
+                   th:href="@{/room/available/{id}(id=${r.id})}"
+                   class="btn btn-success">
+                    Kết thúc bảo trì
+                </a>
+
             </div>
         </div>
     </div>

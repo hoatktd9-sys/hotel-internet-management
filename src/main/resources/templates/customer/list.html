@@ -11,100 +11,62 @@
 
 <body class="bg-light">
 
-    <div class="container mt-5">
+<div class="container mt-5">
 
-        <div class="d-flex justify-content-between mb-4">
+    <div class="d-flex justify-content-between mb-4">
 
-            <h2>Quản lý khách hàng</h2>
-            <div class="d-flex.justify-content-between.mb-4">
-                <a href="/customers/create" class="btn btn-success">
-                    + Thêm khách hàng
-                </a>
-                <a href="/rooms" class="btn btn-secondary text-white">Quản lý phòng</a>
-            </div>
+        <h2>Quản lý khách hàng</h2>
+        <div class="d-flex.justify-content-between.mb-4">
+            <a href="/customers/create" class="btn btn-success">
+                + Thêm khách hàng
+            </a>
+            <a href="/rooms" class="btn btn-secondary text-white">Quản lý phòng</a>
         </div>
+    </div>
 
-        <table class="table table-bordered table-hover bg-white">
+    <table class="table table-bordered table-hover bg-white">
 
-            <thead class="table-dark">
+        <thead class="table-dark">
 
-                <tr>
+        <tr>
 
-                    <th>ID</th>
-                    <th>Họ tên</th>
-                    <th>CCCD</th>
-                    <th>Số điện thoại</th>
-
-                </tr>
-            <th width="180px">
-                Hành động
-            </th>
-
+            <th>ID</th>
+            <th>Họ tên</th>
+            <th>CCCD</th>
+            <th>Số điện thoại</th>
+            <th>Hành động</th>
         </tr>
 
-            </thead>
+        </thead>
 
-            <tbody>
-
-                <tr th:each="c : ${list}">
-
-                    <td th:text="${c.id}"></td>
-            <!-- ID -->
-
+        <tbody>
+        <tr th:each="c : ${list}">
             <td th:text="${c.id}"></td>
-
-                    <td th:text="${c.fullName}"></td>
-            <!-- HỌ TÊN -->
-
             <td th:text="${c.fullName}"></td>
-
-                    <td th:text="${c.identityNumber}"></td>
-            <!-- CCCD -->
-
             <td th:text="${c.identityNumber}"></td>
-
-                    <td th:text="${c.phoneNumber}"></td>
-            <!-- PHONE -->
-
             <td th:text="${c.phoneNumber}"></td>
-
-                </tr>
-            <!-- ACTION -->
-
             <td>
-
                 <div class="d-flex gap-2">
-
                     <!-- SỬA -->
-
                     <a th:href="@{/customers/edit/{id}(id=${c.id})}"
                        class="btn btn-warning btn-sm">
-
                         Sửa
-
                     </a>
 
                     <!-- XÓA -->
-
                     <a th:href="@{/customers/delete/{id}(id=${c.id})}"
                        class="btn btn-danger btn-sm"
                        onclick="return confirm('Bạn có chắc muốn xóa khách hàng này?')">
-
                         Xóa
-
                     </a>
-
                 </div>
-
             </td>
-
         </tr>
+        </tbody>
 
-            </tbody>
+    </table>
 
-        </table>
-
-    </div>
+</div>
 
 </body>
 

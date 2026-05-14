@@ -36,6 +36,11 @@
                     <th>Số điện thoại</th>
 
                 </tr>
+            <th width="180px">
+                Hành động
+            </th>
+
+        </tr>
 
             </thead>
 
@@ -44,14 +49,56 @@
                 <tr th:each="c : ${list}">
 
                     <td th:text="${c.id}"></td>
+            <!-- ID -->
+
+            <td th:text="${c.id}"></td>
 
                     <td th:text="${c.fullName}"></td>
+            <!-- HỌ TÊN -->
+
+            <td th:text="${c.fullName}"></td>
 
                     <td th:text="${c.identityNumber}"></td>
+            <!-- CCCD -->
+
+            <td th:text="${c.identityNumber}"></td>
 
                     <td th:text="${c.phoneNumber}"></td>
+            <!-- PHONE -->
+
+            <td th:text="${c.phoneNumber}"></td>
 
                 </tr>
+            <!-- ACTION -->
+
+            <td>
+
+                <div class="d-flex gap-2">
+
+                    <!-- SỬA -->
+
+                    <a th:href="@{/customers/edit/{id}(id=${c.id})}"
+                       class="btn btn-warning btn-sm">
+
+                        Sửa
+
+                    </a>
+
+                    <!-- XÓA -->
+
+                    <a th:href="@{/customers/delete/{id}(id=${c.id})}"
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Bạn có chắc muốn xóa khách hàng này?')">
+
+                        Xóa
+
+                    </a>
+
+                </div>
+
+            </td>
+
+        </tr>
 
             </tbody>
 

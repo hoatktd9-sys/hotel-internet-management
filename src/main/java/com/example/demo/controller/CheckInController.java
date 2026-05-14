@@ -37,7 +37,7 @@ public class CheckInController {
 
         model.addAttribute(
                 "customers",
-                customerService.getAll()
+                customerService.findAll()
         );
 
         model.addAttribute(

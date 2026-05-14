@@ -1,10 +1,18 @@
 package com.example.demo.controller;
 
-import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.model.Room;
+import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.service.RoomService;
+import com.example.demo.service.RoomTypeService;
+import com.example.demo.model.RoomType;
 
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,9 +23,11 @@ import org.springframework.web.bind.annotation.*;
 public class RoomController {
 
     private final RoomService service;
+    private final RoomTypeService roomTypeService;
 
-    public RoomController(RoomService service) {
+    public RoomController(RoomService service, RoomTypeService roomTypeService) {
         this.service = service;
+        this.roomTypeService = roomTypeService;
     }
 
     // ===== HOME =====
@@ -26,7 +36,7 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
-    // ===== DANH SÁCH PHÒNG =====
+    // ===== LIST =====
     @GetMapping("/rooms")
     public String list(Model model) {
 
@@ -38,7 +48,7 @@ public class RoomController {
         return "list";
     }
 
-    // ===== FORM THÊM PHÒNG =====
+    // ===== CREATE FORM =====
     @GetMapping("/create")
     public String create(Model model) {
 
@@ -46,33 +56,64 @@ public class RoomController {
                 "room",
                 new Room()
         );
+        model.addAttribute("roomTypes", roomTypeService.findAll());
 
         return "create";
     }
 
-    // ===== LƯU PHÒNG =====
+    // ===== SAVE =====
     @PostMapping("/save")
     public String save(
             @Valid @ModelAttribute("room") Room room,
             BindingResult result,
+            @RequestParam("imageFile") MultipartFile imageFile,
             Model model
     ) {
 
+        if (service.existsByRoomName(room.getRoomName())) {
+            result.rejectValue("roomName", "error.room", "Tên phòng đã tồn tại");
+        }
+
         if (result.hasErrors()) {
+            System.out.println("Validation errors: " + result.getAllErrors());
+            model.addAttribute("roomTypes", roomTypeService.findAll());
             return "create";
+        }
+        
+        try {
+            if (!imageFile.isEmpty()) {
+                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+                Path uploadPath = Paths.get("src/main/resources/static/images");
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Files.copy(imageFile.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                room.setImage("/images/" + fileName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         // mặc định phòng mới là AVAILABLE
-        if (room.getStatus() == null) {
-            room.setStatus(RoomStatus.AVAILABLE);
-        }
+        room.setStatus(RoomStatus.AVAILABLE);
 
         service.save(room);
 
-        return "redirect:/rooms";
+        model.addAttribute(
+                "success",
+                "Thêm phòng thành công!"
+        );
+
+        model.addAttribute(
+                "room",
+                new Room()
+        );
+        model.addAttribute("roomTypes", roomTypeService.findAll());
+
+        return "create";
     }
 
-    // ===== FORM UPDATE =====
+    // ===== EDIT =====
     @GetMapping("/edit/{id}")
     public String edit(
             @PathVariable Long id,
@@ -88,6 +129,7 @@ public class RoomController {
                 "isEdit",
                 true
         );
+        model.addAttribute("roomTypes", roomTypeService.findAll());
 
         return "create";
     }
@@ -97,8 +139,14 @@ public class RoomController {
     public String update(
             @Valid @ModelAttribute("room") Room room,
             BindingResult result,
+            @RequestParam("imageFile") MultipartFile imageFile,
             Model model
     ) {
+
+        Room oldRoom = service.findById(room.getId());
+        if (!oldRoom.getRoomName().equals(room.getRoomName()) && service.existsByRoomName(room.getRoomName())) {
+            result.rejectValue("roomName", "error.room", "Tên phòng đã tồn tại");
+        }
 
         if (result.hasErrors()) {
 
@@ -106,51 +154,46 @@ public class RoomController {
                     "isEdit",
                     true
             );
+            model.addAttribute("roomTypes", roomTypeService.findAll());
 
             return "create";
         }
 
-        // giữ trạng thái cũ
-        Room oldRoom =
-                service.findById(room.getId());
-
         room.setStatus(oldRoom.getStatus());
+        
+        try {
+            if (!imageFile.isEmpty()) {
+                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+                Path uploadPath = Paths.get("src/main/resources/static/images");
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Files.copy(imageFile.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                room.setImage("/images/" + fileName);
+            } else {
+                room.setImage(oldRoom.getImage());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         service.save(room);
 
         return "redirect:/rooms";
     }
 
-    // ===== XÓA =====
+    // ===== DELETE =====
     @GetMapping("/delete/{id}")
-    public String delete(
-            @PathVariable Long id
-    ) {
+    public String delete(@PathVariable Long id) {
 
         service.delete(id);
 
         return "redirect:/rooms";
     }
 
-    // ===== CHI TIẾT PHÒNG =====
-    @GetMapping("/room/detail/{id}")
-    public String detail(
-            @PathVariable Long id,
-            Model model
-    ) {
-
-        model.addAttribute(
-                "room",
-                service.findById(id)
-        );
-
-        return "detail";
-    }
-
-    // ===== SEARCH THEO GIÁ =====
+    // ===== SEARCH =====
     @GetMapping("/search")
     public String search(
-
             @RequestParam(required = false)
             Double price,
 
@@ -170,102 +213,51 @@ public class RoomController {
         return "list";
     }
 
-    // ===== LỌC THEO TRẠNG THÁI =====
-    @GetMapping("/status/{status}")
-    public String filterByStatus(
-            @PathVariable RoomStatus status,
-            Model model
+    // ===== HOÀN TẤT DỌN DẸP =====
+    @GetMapping("/room/complete-cleaning/{id}")
+    public String completeCleaning(
+            @PathVariable Long id
     ) {
 
-        model.addAttribute(
-                "list",
-                service.findByStatus(status)
-        );
+        // tìm phòng
+        Room room = service.findById(id);
 
-        model.addAttribute(
-                "selectedStatus",
-                status
-        );
+        // đổi trạng thái
+        room.setStatus(RoomStatus.AVAILABLE);
 
-        return "list";
-    }
-
-    // ===== CHUYỂN TRẠNG THÁI =====
-    @GetMapping("/change-status/{id}/{status}")
-    public String changeStatus(
-            @PathVariable Long id,
-            @PathVariable RoomStatus status
-    ) {
-
-        service.updateStatus(id, status);
+        // lưu
+        service.save(room);
 
         return "redirect:/rooms";
     }
 
-    // ===== HOÀN TẤT DỌN DẸP =====
+    // ===== HOÀN TẤT DỌN DẸP (API MỚI) =====
     @GetMapping("/room/available/{id}")
     public String makeRoomAvailable(
             @PathVariable Long id
     ) {
 
-        service.updateStatus(
-                id,
-                RoomStatus.AVAILABLE
-        );
+        // tìm phòng
+        Room room = service.findById(id);
+
+        // chuyển sang AVAILABLE
+        room.setStatus(RoomStatus.AVAILABLE);
+
+        // lưu
+        service.save(room);
 
         return "redirect:/rooms";
     }
 
-    // ===== SEARCH NÂNG CAO (ĐÃ CẬP NHẬT ĐA THAM SỐ) =====
-    @GetMapping("/rooms/search")
-    public String searchRooms(
-
-            @RequestParam(required = false)
-            String keyword,
-
-            @RequestParam(required = false)
-            RoomStatus status,
-
-            @RequestParam(required = false)
-            String roomType,
-
-            Model model
+    // ===== XÓA PHÒNG (API MỚI) =====
+    @GetMapping("/room/delete/{id}")
+    public String deleteRoom(
+            @PathVariable Long id
     ) {
 
-        // convert chuỗi rỗng -> null để Repository xử lý đúng logic IS NULL
-        if (keyword != null && keyword.trim().isEmpty()) {
-            keyword = null;
-        }
+        service.delete(id);
 
-        if (roomType != null && roomType.trim().isEmpty()) {
-            roomType = null;
-        }
-
-        model.addAttribute(
-                "list",
-                service.searchRooms(
-                        keyword,
-                        status,
-                        roomType
-                )
-        );
-
-        model.addAttribute(
-                "keyword",
-                keyword
-        );
-
-        model.addAttribute(
-                "selectedStatus",
-                status
-        );
-
-        model.addAttribute(
-                "selectedRoomType",
-                roomType
-        );
-
-        return "list";
+        return "redirect:/rooms";
     }
 
 }

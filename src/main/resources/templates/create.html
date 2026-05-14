@@ -73,7 +73,8 @@
 
     <form th:action="${isEdit} ? '/update' : '/save'"
           th:object="${room}"
-          method="post">
+          method="post"
+          enctype="multipart/form-data">
 
         <!-- ID ẩn để update -->
         <input type="hidden" th:field="*{id}">
@@ -110,16 +111,30 @@
 
         <label>Loại phòng</label>
 
-        <select th:field="*{roomType}">
+        <div th:if="${roomTypes == null or roomTypes.empty}" style="color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+            Chưa có loại phòng nào. Vui lòng <a href="/room-types" style="color: #0056b3; font-weight: bold;">tạo loại phòng trước</a>.
+        </div>
+
+        <select th:field="*{roomType.id}" th:unless="${roomTypes == null or roomTypes.empty}">
             <option value="">-- Chọn loại phòng --</option>
-            <option value="VIP">VIP</option>
-            <option value="NORMAL">Thường</option>
+            <option th:each="rt : ${roomTypes}"
+                    th:value="${rt.id}"
+                    th:text="${rt.name}">
+            </option>
         </select>
 
         <div class="error"
              th:if="${#fields.hasErrors('roomType')}"
              th:errors="*{roomType}">
         </div>
+
+        <label>Hình ảnh phòng</label>
+        
+        <div th:if="${room.image != null}">
+            <img th:src="${room.image}" alt="Room Image" style="max-width: 200px; max-height: 200px; display: block; margin-bottom: 10px; border-radius: 5px;">
+        </div>
+
+        <input type="file" name="imageFile" accept="image/*">
 
 
         <label>Mô tả</label>

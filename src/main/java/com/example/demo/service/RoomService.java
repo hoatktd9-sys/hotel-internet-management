@@ -4,66 +4,68 @@ import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.model.Room;
 import com.example.demo.repository.RoomRepository;
 import org.springframework.stereotype.Service;
-
+import com.example.demo.repository.RoomRepository;
 import java.util.List;
 
 @Service
 public class RoomService {
 
-    private final RoomRepository repository;
+    private final RoomRepository roomrepository;
+    private final RoomTypeService roomTypeService;
 
-    public RoomService(RoomRepository repository) {
-        this.repository = repository;
+    public RoomService(RoomRepository repository, RoomTypeService roomTypeService) {
+        this.roomrepository = repository;
+        this.roomTypeService = roomTypeService;
     }
 
     // ===== LẤY TOÀN BỘ PHÒNG =====
     public List<Room> findAll() {
-        return repository.findAll();
+        return roomrepository.findAll();
     }
 
     // ===== GET ALL =====
     public List<Room> getAll() {
-        return repository.findAll();
+        return roomrepository.findAll();
     }
 
     // ===== KIỂM TRA TÊN PHÒNG TỒN TẠI =====
     public boolean existsByRoomName(String roomName) {
-        return repository.existsByRoomName(roomName);
+        return roomrepository.existsByRoomName(roomName);
     }
 
     // ===== TÌM THEO ID =====
     public Room findById(Long id) {
-        return repository.findById(id).orElseThrow();
+        return roomrepository.findById(id).orElseThrow();
     }
 
     // ===== LƯU PHÒNG =====
     public void save(Room room) {
-        repository.save(room);
+        roomrepository.save(room);
     }
 
     // ===== XÓA PHÒNG =====
     public void delete(Long id) {
-        repository.deleteById(id);
+        roomrepository.deleteById(id);
     }
 
     // ===== SEARCH THEO GIÁ =====
     public List<Room> search(Double price) {
-        return repository.search(price);
+        return roomrepository.search(price);
     }
 
     // ===== TÌM THEO TRẠNG THÁI =====
     public List<Room> findByStatus(RoomStatus status) {
-        return repository.findByStatus(status);
+        return roomrepository.findByStatus(status);
     }
 
     // ===== TÌM THEO LOẠI PHÒNG =====
     public List<Room> findByRoomType(String roomType) {
-        return repository.findByRoomType(roomType);
+        return roomrepository.findByRoomType(roomType);
     }
 
     // ===== TÌM THEO TÊN PHÒNG =====
     public List<Room> searchByName(String keyword) {
-        return repository.findByRoomNameContainingIgnoreCase(keyword);
+        return roomrepository.findByRoomNameContainingIgnoreCase(keyword);
     }
 
     // ===== ĐỔI TRẠNG THÁI =====
@@ -73,7 +75,7 @@ public class RoomService {
 
         room.setStatus(status);
 
-        repository.save(room);
+        roomrepository.save(room);
     }
 
     // ===== SEARCH NÂNG CAO (MỚI THÊM) =====
@@ -83,7 +85,7 @@ public class RoomService {
             String roomType
     ) {
 
-        return repository.searchRooms(
+        return roomrepository.searchRooms(
                 keyword,
                 status,
                 roomType

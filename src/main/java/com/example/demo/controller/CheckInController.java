@@ -107,9 +107,8 @@ public class CheckInController {
                 checkIn.getCheckOutTime()
         );
 
-        // đổi sang giờ
-        double totalHours =
-                duration.toMinutes() / 60.0;
+        // đổi sang giờ (tối thiểu 1 giờ)
+        double totalHours = Math.max(1.0, duration.toMinutes() / 60.0);
 
         checkIn.setTotalHours(totalHours);
 

@@ -26,6 +26,11 @@ public class RoomService {
         return repository.findAll();
     }
 
+    // ===== KIỂM TRA TÊN PHÒNG TỒN TẠI =====
+    public boolean existsByRoomName(String roomName) {
+        return repository.existsByRoomName(roomName);
+    }
+
     // ===== TÌM THEO ID =====
     public Room findById(Long id) {
         return repository.findById(id).orElseThrow();

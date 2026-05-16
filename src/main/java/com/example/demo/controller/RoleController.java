@@ -10,10 +10,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/roles")
+@RequestMapping("/admin")
 public class RoleController {
+    @Autowired
    private RoleService roleService;
-   PermissionService permissionservice;
+    @Autowired
+   private PermissionService permissionservice;
+
    public RoleService getRoleService() {
         return roleService;
     }
@@ -24,6 +27,6 @@ public class RoleController {
     public String listRoles(Model model) {
         model.addAttribute("roles", roleService.findAllRoles());
         model.addAttribute("allPermissions", permissionservice.findAll());
-        return "admin/roles/list";
+        return "/admin/roles/list";
     }
 }

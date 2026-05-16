@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý tài khoản - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { margin-top: 30px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Gaming Hotel</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/admin/users">Nhân viên</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/roles">Quyền (Roles)</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post">
+                        <button class="btn btn-outline-light nav-link" type="submit">Đăng xuất</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <h2>Quản lý tài khoản nhân viên</h2>
+    
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    
+    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        + Tạo tài khoản
+    </button>
+    
+    <table class="table table-bordered table-striped bg-white">
+        <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Tên đăng nhập</th>
+            <th>Email</th>
+            <th>Trạng thái</th>
+            <th>Roles</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="u : ${users}">
+            <td th:text="${u.id}"></td>
+            <td th:text="${u.username}"></td>
+            <td th:text="${u.email}"></td>
+            <td>
+                <span th:if="${u.isActive}" class="badge bg-success">Hoạt động</span>
+                <span th:unless="${u.isActive}" class="badge bg-danger">Đã khóa</span>
+            </td>
+            <td>
+                <span th:each="r : ${u.roles}" class="badge bg-info me-1" th:text="${r.roleName}"></span>
+            </td>
+            <td>
+                <a th:href="@{/admin/users/toggle-lock/{id}(id=${u.id})}" 
+                   class="btn btn-sm" th:classappend="${u.isActive ? 'btn-warning' : 'btn-success'}"
+                   th:text="${u.isActive ? 'Khóa' : 'Mở khóa'}"></a>
+                   
+                <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal" th:data-bs-target="'#assignRoleModal' + ${u.id}">
+                    Gán Role
+                </button>
+                
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" th:data-bs-target="'#resetPasswordModal' + ${u.id}">
+                    Reset Password
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Create User -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/admin/users/create}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tạo tài khoản nhân viên</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Tên đăng nhập</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Mật khẩu</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Gán Roles ban đầu</label>
+                        <div th:each="r : ${allRoles}">
+                            <input type="checkbox" name="roleIds" th:value="${r.id}" th:id="'role_'+${r.id}">
+                            <label th:for="'role_'+${r.id}" th:text="${r.roleName}"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Tạo mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for Assign RoleController and Reset Password -->
+<div th:each="u : ${users}">
+    <!-- Assign RoleController Modal -->
+    <div class="modal fade" th:id="'assignRoleModal' + ${u.id}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/admin/users/assign-role/{id}(id=${u.id})}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" th:text="'Gán Role cho ' + ${u.username}"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div th:each="r : ${allRoles}">
+                            <input type="checkbox" name="roleIds" th:value="${r.id}" th:id="'u'+${u.id}+'r'+${r.id}"
+                                   th:checked="${#lists.contains(u.roles, r)}">
+                            <label th:for="'u'+${u.id}+'r'+${r.id}" th:text="${r.roleName}"></label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reset Password Modal -->
+    <div class="modal fade" th:id="'resetPasswordModal' + ${u.id}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/admin/users/reset-password/{id}(id=${u.id})}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" th:text="'Khôi phục mật khẩu: ' + ${u.username}"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>Mật khẩu mới</label>
+                            <input type="password" name="newPassword" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger">Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

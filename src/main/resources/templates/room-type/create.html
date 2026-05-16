@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${isEdit} ? 'Cập nhật loại phòng' : 'Thêm loại phòng'"></title>
+    <style>
+        body{ font-family: Arial; background:#f4f4f4; padding:40px; }
+        .container{ width:600px; margin:auto; background:white; padding:30px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+        h1{ text-align:center; margin-bottom:30px; }
+        input{ width:100%; padding:10px; margin-top:5px; margin-bottom:20px; border:1px solid #ccc; border-radius:5px; box-sizing:border-box; }
+        button{ background:#28a745; color:white; border:none; padding:12px 20px; border-radius:5px; cursor:pointer; }
+        button:hover{ background:#218838; }
+        .error{ color:red; font-size:14px; margin-top:-15px; margin-bottom:15px; }
+        .back{ display:inline-block; margin-top:20px; text-decoration:none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 th:text="${isEdit} ? 'Cập nhật loại phòng' : 'Thêm loại phòng'"></h1>
+    <form th:action="${isEdit} ? '/room-types/update' : '/room-types/save'" th:object="${roomType}" method="post">
+        <input type="hidden" th:field="*{id}">
+        <label>Tên loại phòng</label>
+        <input type="text" th:field="*{name}">
+        <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+        <button type="submit" th:text="${isEdit} ? 'Cập nhật' : 'Lưu'"></button>
+    </form>
+    <br>
+    <a href="/room-types" class="back">← Quay lại danh sách</a>
+</div>
+</body>
+</html>

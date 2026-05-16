@@ -66,14 +66,14 @@
 
             <!-- CHECKIN -->
 
-            <td th:text="${c.checkInTime}"></td>
+            <td th:text="${#temporals.format(c.checkInTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
 
             <!-- CHECKOUT -->
 
             <td>
 
                 <span th:if="${c.checkOutTime != null}"
-                      th:text="${c.checkOutTime}">
+                      th:text="${#temporals.format(c.checkOutTime, 'yyyy-MM-dd HH:mm:ss')}">
                 </span>
 
                 <span th:if="${c.checkOutTime == null}">

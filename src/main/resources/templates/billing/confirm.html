@@ -50,7 +50,7 @@
 
                 <th>Giờ check-in</th>
 
-                <td th:text="${checkIn.checkInTime}"></td>
+                <td th:text="${#temporals.format(checkIn.checkInTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
 
             </tr>
 
@@ -60,7 +60,7 @@
 
                 <th>Giờ check-out</th>
 
-                <td th:text="${checkIn.checkOutTime}"></td>
+                <td th:text="${#temporals.format(checkIn.checkOutTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
 
             </tr>
 

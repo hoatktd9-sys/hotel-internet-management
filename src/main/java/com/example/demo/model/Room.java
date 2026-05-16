@@ -13,18 +13,23 @@ public class Room {
     private Long id;
 
     @NotBlank(message = "Tên phòng không được để trống")
+    @Column(unique = true)
     private String roomName;
 
     @NotNull(message = "Giá phòng không được để trống")
-    @Min(value = 50000, message = "Giá phòng phải lớn hơn 50.000 VNĐ")
+    @DecimalMin(value = "50000.0", message = "Giá phòng phải lớn hơn 50.000 VNĐ")
     private Double price;
 
     @NotNull(message = "Số máy tính không được để trống")
     @Min(value = 1, message = "Số máy tính phải lớn hơn 0")
     private Integer computerCount;
 
-    @NotBlank(message = "Loại phòng không được để trống")
-    private String roomType;
+    @NotNull(message = "Loại phòng không được để trống")
+    @ManyToOne
+    @JoinColumn(name = "room_type_id")
+    private RoomType roomType;
+
+    private String image;
 
     @NotBlank(message = "Mô tả không được để trống")
     private String description;
@@ -51,6 +56,9 @@ public class Room {
     @Enumerated(EnumType.STRING)
     private RoomStatus status;
 
+    @OneToMany(mappedBy = "room", cascade = CascadeType.REMOVE)
+    private java.util.List<CheckIn> checkIns;
+
     // ===== Constructor =====
 
     public Room() {
@@ -75,8 +83,12 @@ public class Room {
         return computerCount;
     }
 
-    public String getRoomType() {
+    public RoomType getRoomType() {
         return roomType;
+    }
+
+    public String getImage() {
+        return image;
     }
 
     public String getDescription() {
@@ -150,8 +162,12 @@ public class Room {
         this.computerCount = computerCount;
     }
 
-    public void setRoomType(String roomType) {
+    public void setRoomType(RoomType roomType) {
         this.roomType = roomType;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public void setDescription(String description) {

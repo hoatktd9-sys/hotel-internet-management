@@ -14,7 +14,7 @@
     <div class="top-bar">
         <h1>Danh sách Loại Phòng</h1>
         <div class="d-flex gap-2">
-            <a href="/room-types/create" class="btn btn-success">+ Thêm loại phòng</a>
+            <a href="/admin/room-types/create" class="btn btn-success">+ Thêm loại phòng</a>
             <a href="/rooms" class="btn btn-secondary">Quay lại Phòng</a>
         </div>
     </div>
@@ -32,8 +32,8 @@
                 <td th:text="${rt.id}"></td>
                 <td th:text="${rt.name}"></td>
                 <td>
-                    <a th:href="@{/room-types/edit/{id}(id=${rt.id})}" class="btn btn-warning btn-sm">Sửa</a>
-                    <a th:href="@{/room-types/delete/{id}(id=${rt.id})}" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
+                    <a th:href="@{/admin/room-types/edit/{id}(id=${rt.id})}" class="btn btn-warning btn-sm">Sửa</a>
+                    <a th:href="@{/admin/room-types/delete/{id}(id=${rt.id})}" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(list)}">

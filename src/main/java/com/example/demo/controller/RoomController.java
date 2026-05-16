@@ -10,6 +10,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 @Controller
 public class RoomController {
@@ -50,19 +55,56 @@ public class RoomController {
         return "create";
     }
 
-    // ===== LƯU PHÒNG =====
+    // ===== LƯU PHÒNG (ĐH CẬP NHẬT LOGIC UPLOAD) =====
     @PostMapping("/save")
     public String save(
-            @Valid @ModelAttribute("room") Room room,
+
+            @Valid @ModelAttribute("room")
+            Room room,
+
             BindingResult result,
+
+            @RequestParam("imageFile")
+            MultipartFile imageFile,
+
             Model model
-    ) {
+    ) throws IOException {
 
         if (result.hasErrors()) {
             return "create";
         }
 
-        // mặc định phòng mới là AVAILABLE
+        // ===== UPLOAD ẢNH =====
+
+        if (!imageFile.isEmpty()) {
+
+            // thư mục uploads
+            String uploadDir =
+                    new File("uploads").getAbsolutePath();
+
+            File dir = new File(uploadDir);
+
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // đổi tên file tránh trùng
+            String fileName =
+                    UUID.randomUUID()
+                            + "_"
+                            + imageFile.getOriginalFilename();
+
+            // lưu file
+            File saveFile =
+                    new File(uploadDir, fileName);
+
+            imageFile.transferTo(saveFile);
+
+            // lưu tên file vào DB
+            room.setImage(fileName);
+        }
+
+        // mặc định AVAILABLE
         if (room.getStatus() == null) {
             room.setStatus(RoomStatus.AVAILABLE);
         }
@@ -92,13 +134,20 @@ public class RoomController {
         return "create";
     }
 
-    // ===== UPDATE =====
+    // ===== UPDATE (ĐH CẬP NHẬT LOGIC UPLOAD) =====
     @PostMapping("/update")
     public String update(
-            @Valid @ModelAttribute("room") Room room,
+
+            @Valid @ModelAttribute("room")
+            Room room,
+
             BindingResult result,
+
+            @RequestParam("imageFile")
+            MultipartFile imageFile,
+
             Model model
-    ) {
+    ) throws IOException {
 
         if (result.hasErrors()) {
 
@@ -115,6 +164,37 @@ public class RoomController {
                 service.findById(room.getId());
 
         room.setStatus(oldRoom.getStatus());
+
+        // ===== UPDATE ẢNH =====
+
+        if (!imageFile.isEmpty()) {
+
+            String uploadDir =
+                    new File("uploads").getAbsolutePath();
+
+            File dir = new File(uploadDir);
+
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            String fileName =
+                    UUID.randomUUID()
+                            + "_"
+                            + imageFile.getOriginalFilename();
+
+            File saveFile =
+                    new File(uploadDir, fileName);
+
+            imageFile.transferTo(saveFile);
+
+            room.setImage(fileName);
+
+        } else {
+
+            // giữ ảnh cũ
+            room.setImage(oldRoom.getImage());
+        }
 
         service.save(room);
 
@@ -216,7 +296,7 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
-    // ===== SEARCH NÂNG CAO (ĐÃ CẬP NHẬT ĐA THAM SỐ) =====
+    // ===== SEARCH NÂNG CAO =====
     @GetMapping("/rooms/search")
     public String searchRooms(
 
@@ -232,7 +312,6 @@ public class RoomController {
             Model model
     ) {
 
-        // convert chuỗi rỗng -> null để Repository xử lý đúng logic IS NULL
         if (keyword != null && keyword.trim().isEmpty()) {
             keyword = null;
         }

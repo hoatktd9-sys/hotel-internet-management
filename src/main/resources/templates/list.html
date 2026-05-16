@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8">
@@ -95,21 +95,22 @@
     <div class="top-bar">
 
         <h1>Quản lý phòng internet</h1>
+        <div sec:authorize="isAuthenticated()" class="ms-auto me-3 align-self-center">
+            Xin chào, <span sec:authentication="name" class="fw-bold text-primary">Tên_User</span>!
+        </div>
 
         <div class="d-flex gap-2">
 
             <!-- THÊM PHÒNG -->
-
-            <a href="/create"
-               class="btn btn-success">
-
+             <a href="/create" sec:authorize="hasRole('ADMIN')"  class="btn btn-success">
                 + Thêm phòng
 
             </a>
 
+
             <!-- QUẢN LÝ LOẠI PHÒNG -->
 
-            <a href="/room-types"
+            <a href="admin/room-types"
                class="btn btn-info text-white">
 
                 Quản lý loại phòng

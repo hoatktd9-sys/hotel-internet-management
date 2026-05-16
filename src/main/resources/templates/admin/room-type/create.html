@@ -17,7 +17,7 @@
 <body>
 <div class="container">
     <h1 th:text="${isEdit} ? 'Cập nhật loại phòng' : 'Thêm loại phòng'"></h1>
-    <form th:action="${isEdit} ? '/room-types/update' : '/room-types/save'" th:object="${roomType}" method="post">
+    <form th:action="${isEdit} ? '/admin/room-types/update' : '/admin/room-types/save'" th:object="${roomType}" method="post">
         <input type="hidden" th:field="*{id}">
         <label>Tên loại phòng</label>
         <input type="text" th:field="*{name}">
@@ -25,7 +25,7 @@
         <button type="submit" th:text="${isEdit} ? 'Cập nhật' : 'Lưu'"></button>
     </form>
     <br>
-    <a href="/room-types" class="back">← Quay lại danh sách</a>
+    <a href="/admin/room-types" class="back">← Quay lại danh sách</a>
 </div>
 </body>
 </html>

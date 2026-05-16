@@ -23,13 +23,23 @@ public class Permission {
     public void setId(Long id) {
         this.id = id;
     }
+    @Override
+    public String toString() {
+        return "Permission{" + "id=" + id + ", permissionName='" + permissionName + '\'' + ", description='" + description + '\'' + '}';
+    };
+
     public String getPermissionName() {
         return permissionName;
     }
-    public void setPermissionName(String permissionName) {}
+
+    public void setPermissionName(String permissionName) {
+        this.permissionName = permissionName;
+    }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }

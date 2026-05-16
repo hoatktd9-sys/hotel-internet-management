@@ -33,6 +33,14 @@ public class User {
         this.email = email;
     }
 
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
     public Long getId() {
         return id;
     }

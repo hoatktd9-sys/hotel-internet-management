@@ -13,22 +13,41 @@
         body{
             background:#f4f6f9;
             padding:40px;
+            font-family:Arial;
         }
 
         .detail-box{
-            max-width:700px;
+            max-width:900px;
             margin:auto;
             background:white;
             padding:30px;
             border-radius:15px;
-            box-shadow:0 0 10px rgba(0,0,0,0.1);
+            box-shadow:0 0 15px rgba(0,0,0,0.1);
         }
 
         .title{
-            font-size:32px;
+            font-size:36px;
             font-weight:bold;
             margin-bottom:30px;
             text-align:center;
+        }
+
+        .room-image{
+            width:100%;
+            height:350px;
+            object-fit:cover;
+            border-radius:15px;
+            margin-bottom:30px;
+            border:1px solid #ddd;
+        }
+
+        .section-title{
+            font-size:24px;
+            font-weight:bold;
+            margin-top:30px;
+            margin-bottom:20px;
+            border-bottom:2px solid #ddd;
+            padding-bottom:10px;
         }
 
         .info{
@@ -62,6 +81,26 @@
             color:#0c5460;
         }
 
+        .spec-grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:20px;
+            margin-top:20px;
+        }
+
+        .spec-card{
+            background:#f8f9fa;
+            padding:20px;
+            border-radius:12px;
+            border:1px solid #ddd;
+        }
+
+        .spec-title{
+            font-size:20px;
+            font-weight:bold;
+            margin-bottom:10px;
+        }
+
     </style>
 
 </head>
@@ -70,8 +109,22 @@
 
 <div class="detail-box">
 
+    <!-- TITLE -->
     <div class="title">
         Chi tiết phòng
+    </div>
+
+    <!-- IMAGE -->
+    <div th:if="${room.image != null}">
+
+        <img th:src="@{'/uploads/' + ${room.image}}"
+             class="room-image">
+
+    </div>
+
+    <!-- THÔNG TIN -->
+    <div class="section-title">
+        Thông tin phòng
     </div>
 
     <div class="info">
@@ -105,6 +158,7 @@
         <span th:text="${room.description}"></span>
     </div>
 
+    <!-- STATUS -->
     <div class="info">
 
         <b>Trạng thái:</b>
@@ -131,6 +185,61 @@
 
     </div>
 
+    <!-- CẤU HÌNH -->
+    <div class="section-title">
+        Cấu hình máy tính
+    </div>
+
+    <div class="spec-grid">
+
+        <!-- CPU -->
+        <div class="spec-card">
+            <div class="spec-title">
+                CPU
+            </div>
+
+            <div th:text="${room.cpu}"></div>
+        </div>
+
+        <!-- RAM -->
+        <div class="spec-card">
+            <div class="spec-title">
+                RAM
+            </div>
+
+            <div th:text="${room.ram}"></div>
+        </div>
+
+        <!-- VGA -->
+        <div class="spec-card">
+            <div class="spec-title">
+                VGA
+            </div>
+
+            <div th:text="${room.vga}"></div>
+        </div>
+
+        <!-- SSD -->
+        <div class="spec-card">
+            <div class="spec-title">
+                SSD
+            </div>
+
+            <div th:text="${room.ssd}"></div>
+        </div>
+
+        <!-- MONITOR -->
+        <div class="spec-card">
+            <div class="spec-title">
+                Màn hình
+            </div>
+
+            <div th:text="${room.monitor}"></div>
+        </div>
+
+    </div>
+
+    <!-- BUTTON -->
     <div class="mt-4 d-flex gap-2">
 
         <a href="/rooms"

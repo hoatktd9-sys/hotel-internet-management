@@ -13,7 +13,7 @@
         }
 
         .container{
-            width:600px;
+            width:700px;
             margin:auto;
             background:white;
             padding:30px;
@@ -62,6 +62,25 @@
             text-decoration:none;
         }
 
+        .preview-image{
+            width:100%;
+            height:250px;
+            object-fit:cover;
+            border-radius:10px;
+            margin-bottom:20px;
+            border:1px solid #ccc;
+        }
+
+        .section-title{
+            margin-top:30px;
+            margin-bottom:20px;
+            font-size:22px;
+            font-weight:bold;
+            color:#333;
+            border-bottom:2px solid #ddd;
+            padding-bottom:10px;
+        }
+
     </style>
 
 </head>
@@ -76,8 +95,31 @@
           method="post"
           enctype="multipart/form-data">
 
-        <!-- ID ẩn để update -->
+        <!-- ID -->
         <input type="hidden" th:field="*{id}">
+
+        <!-- GIỮ ẢNH -->
+        <input type="hidden" th:field="*{image}">
+
+        <!-- XEM ẢNH -->
+        <div th:if="${room.image != null}">
+
+            <img th:src="@{'/uploads/' + ${room.image}}"
+                 class="preview-image">
+
+        </div>
+
+        <!-- UPLOAD -->
+        <label>Ảnh phòng</label>
+
+        <input type="file"
+               name="imageFile"
+               accept="image/*">
+
+        <!-- THÔNG TIN PHÒNG -->
+        <div class="section-title">
+            Thông tin phòng
+        </div>
 
         <label>Tên phòng</label>
 
@@ -88,7 +130,6 @@
              th:errors="*{roomName}">
         </div>
 
-
         <label>Giá phòng</label>
 
         <input type="number" th:field="*{price}">
@@ -98,7 +139,6 @@
              th:errors="*{price}">
         </div>
 
-
         <label>Số máy tính</label>
 
         <input type="number" th:field="*{computerCount}">
@@ -107,7 +147,6 @@
              th:if="${#fields.hasErrors('computerCount')}"
              th:errors="*{computerCount}">
         </div>
-
 
         <label>Loại phòng</label>
 
@@ -129,7 +168,7 @@
         </div>
 
         <label>Hình ảnh phòng</label>
-        
+
         <div th:if="${room.image != null}">
             <img th:src="${room.image}" alt="Room Image" style="max-width: 200px; max-height: 200px; display: block; margin-bottom: 10px; border-radius: 5px;">
         </div>
@@ -148,6 +187,65 @@
              th:errors="*{description}">
         </div>
 
+        <!-- CẤU HÌNH -->
+        <div class="section-title">
+            Cấu hình máy tính
+        </div>
+
+        <label>CPU</label>
+
+        <input type="text"
+               th:field="*{cpu}"
+               placeholder="Ví dụ: Intel Core i5 12400F">
+
+        <div class="error"
+             th:if="${#fields.hasErrors('cpu')}"
+             th:errors="*{cpu}">
+        </div>
+
+        <label>RAM</label>
+
+        <input type="text"
+               th:field="*{ram}"
+               placeholder="Ví dụ: 16GB DDR4">
+
+        <div class="error"
+             th:if="${#fields.hasErrors('ram')}"
+             th:errors="*{ram}">
+        </div>
+
+        <label>VGA</label>
+
+        <input type="text"
+               th:field="*{vga}"
+               placeholder="Ví dụ: RTX 3060">
+
+        <div class="error"
+             th:if="${#fields.hasErrors('vga')}"
+             th:errors="*{vga}">
+        </div>
+
+        <label>SSD</label>
+
+        <input type="text"
+               th:field="*{ssd}"
+               placeholder="Ví dụ: SSD NVME 512GB">
+
+        <div class="error"
+             th:if="${#fields.hasErrors('ssd')}"
+             th:errors="*{ssd}">
+        </div>
+
+        <label>Màn hình</label>
+
+        <input type="text"
+               th:field="*{monitor}"
+               placeholder="Ví dụ: 27 inch 144Hz">
+
+        <div class="error"
+             th:if="${#fields.hasErrors('monitor')}"
+             th:errors="*{monitor}">
+        </div>
 
         <button type="submit"
                 th:text="${isEdit} ? 'Cập nhật phòng' : 'Lưu phòng'">

@@ -18,6 +18,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 @Controller
 public class RoomController {
@@ -62,13 +67,21 @@ public class RoomController {
     }
 
     // ===== SAVE =====
+    // ===== LƯU PHÒNG (ĐH CẬP NHẬT LOGIC UPLOAD) =====
     @PostMapping("/save")
     public String save(
-            @Valid @ModelAttribute("room") Room room,
+
+            @Valid @ModelAttribute("room")
+            Room room,
+
             BindingResult result,
+
+            @RequestParam("imageFile")
+            MultipartFile imageFile,
+
             @RequestParam("imageFile") MultipartFile imageFile,
             Model model
-    ) {
+    ) throws IOException {
 
         if (service.existsByRoomName(room.getRoomName())) {
             result.rejectValue("roomName", "error.room", "Tên phòng đã tồn tại");
@@ -79,7 +92,7 @@ public class RoomController {
             model.addAttribute("roomTypes", roomTypeService.findAll());
             return "create";
         }
-        
+
         try {
             if (!imageFile.isEmpty()) {
                 String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
@@ -94,6 +107,40 @@ public class RoomController {
             e.printStackTrace();
         }
 
+        // ===== UPLOAD ẢNH =====
+
+        if (!imageFile.isEmpty()) {
+
+            // thư mục uploads
+            String uploadDir =
+                    new File("uploads").getAbsolutePath();
+
+            File dir = new File(uploadDir);
+
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // đổi tên file tránh trùng
+            String fileName =
+                    UUID.randomUUID()
+                            + "_"
+                            + imageFile.getOriginalFilename();
+
+            // lưu file
+            File saveFile =
+                    new File(uploadDir, fileName);
+
+            imageFile.transferTo(saveFile);
+
+            // lưu tên file vào DB
+            room.setImage(fileName);
+        }
+
+        // mặc định AVAILABLE
+        if (room.getStatus() == null) {
+            room.setStatus(RoomStatus.AVAILABLE);
+        }
         // mặc định phòng mới là AVAILABLE
         room.setStatus(RoomStatus.AVAILABLE);
 
@@ -134,14 +181,21 @@ public class RoomController {
         return "create";
     }
 
-    // ===== UPDATE =====
+    // ===== UPDATE (ĐH CẬP NHẬT LOGIC UPLOAD) =====
     @PostMapping("/update")
     public String update(
-            @Valid @ModelAttribute("room") Room room,
+
+            @Valid @ModelAttribute("room")
+            Room room,
+
             BindingResult result,
+
+            @RequestParam("imageFile")
+            MultipartFile imageFile,
+
             @RequestParam("imageFile") MultipartFile imageFile,
             Model model
-    ) {
+    ) throws IOException {
 
         Room oldRoom = service.findById(room.getId());
         if (!oldRoom.getRoomName().equals(room.getRoomName()) && service.existsByRoomName(room.getRoomName())) {
@@ -160,7 +214,7 @@ public class RoomController {
         }
 
         room.setStatus(oldRoom.getStatus());
-        
+
         try {
             if (!imageFile.isEmpty()) {
                 String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
@@ -175,6 +229,37 @@ public class RoomController {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        // ===== UPDATE ẢNH =====
+
+        if (!imageFile.isEmpty()) {
+
+            String uploadDir =
+                    new File("uploads").getAbsolutePath();
+
+            File dir = new File(uploadDir);
+
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            String fileName =
+                    UUID.randomUUID()
+                            + "_"
+                            + imageFile.getOriginalFilename();
+
+            File saveFile =
+                    new File(uploadDir, fileName);
+
+            imageFile.transferTo(saveFile);
+
+            room.setImage(fileName);
+
+        } else {
+
+            // giữ ảnh cũ
+            room.setImage(oldRoom.getImage());
         }
 
         service.save(room);
@@ -253,9 +338,26 @@ public class RoomController {
     @GetMapping("/room/delete/{id}")
     public String deleteRoom(
             @PathVariable Long id
+    // ===== SEARCH NÂNG CAO =====
+    @GetMapping("/rooms/search")
+    public String searchRooms(
+
+            @RequestParam(required = false)
+            String keyword,
+
+            @RequestParam(required = false)
+            RoomStatus status,
+
+            @RequestParam(required = false)
+            String roomType,
+
+            Model model
     ) {
 
         service.delete(id);
+        if (keyword != null && keyword.trim().isEmpty()) {
+            keyword = null;
+        }
 
         return "redirect:/rooms";
     }

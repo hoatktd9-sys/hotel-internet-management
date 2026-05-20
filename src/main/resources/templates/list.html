@@ -106,12 +106,17 @@
                 + Thêm phòng
 
             </a>
+            <a href="admin/users" sec:authorize="hasRole('ADMIN')"  class="btn btn-success">
+                Danh sách Nhân Viên
+
+            </a>
 
 
             <!-- QUẢN LÝ LOẠI PHÒNG -->
 
             <a href="admin/room-types"
-               class="btn btn-info text-white">
+               class="btn btn-info text-white"
+               sec:authorize="hasRole('ADMIN')">
 
                 Quản lý loại phòng
 
@@ -132,9 +137,13 @@
             <!-- LỊCH SỬ -->
 
             <a href="/checkin/history"
-               class="btn btn-dark">
-
+               class="btn btn-dark" sec:authorize="hasAuthority('View_History')" >
                 Lịch sử
+
+            </a>
+            <a href="/logout"
+               class="btn"  >
+                Đăng xuất
 
             </a>
 
@@ -241,7 +250,8 @@
                 <!-- SỬA -->
 
                 <a th:href="@{/edit/{id}(id=${r.id})}"
-                   class="btn btn-warning">
+                   class="btn btn-warning"
+                sec:authorize="hasAuthority('Edit_Room')">
 
                     Sửa
 
@@ -251,6 +261,7 @@
 
                 <a th:href="@{/room/delete/{id}(id=${r.id})}"
                    class="btn btn-danger"
+                   sec:authorize="hasAuthority('Delete_Room')"
                    onclick="return confirm('Bạn có chắc muốn xóa?')">
 
                     Xóa

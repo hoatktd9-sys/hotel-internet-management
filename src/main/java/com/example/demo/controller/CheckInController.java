@@ -7,6 +7,7 @@ import com.example.demo.service.CheckInService;
 import com.example.demo.service.CustomerService;
 import com.example.demo.service.RoomService;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -160,7 +161,7 @@ public class CheckInController {
         return "redirect:/rooms";
     }
 
-    // ===== LỊCH SỬ CHECK-IN =====
+    @PreAuthorize("hasAuthority('View_History')")
     @GetMapping("/checkin/history")
     public String history(Model model){
 

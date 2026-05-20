@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <title>Quản lý Quyền - Admin</title>
@@ -42,7 +42,9 @@
     
     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-    
+    <a href="/admin/roles/create" sec:authorize="hasRole('ADMIN')"  class="btn btn-success">
+         Thêm Vị Trí
+    </a>
     <table class="table table-bordered table-striped bg-white mt-4">
         <thead class="table-dark">
         <tr>

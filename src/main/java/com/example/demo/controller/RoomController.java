@@ -7,6 +7,7 @@ import com.example.demo.service.RoomTypeService;
 import com.example.demo.model.RoomType;
 
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +36,7 @@ public class RoomController {
         this.roomTypeService = roomTypeService;
     }
 
-    // ===== HOME =====
+    @PreAuthorize("hasAuthority('View_Room')")
     @GetMapping("/")
     public String home() {
         return "redirect:/rooms";
@@ -53,7 +54,7 @@ public class RoomController {
         return "list";
     }
 
-    // ===== CREATE FORM =====
+    @PreAuthorize("hasAuthority('Create_Room')")
     @GetMapping("/create")
     public String create(Model model) {
 
@@ -67,7 +68,7 @@ public class RoomController {
     }
 
     // ===== SAVE =====
-    // ===== LƯU PHÒNG (ĐH CẬP NHẬT LOGIC UPLOAD) =====
+  @PreAuthorize("hasAuthority('Create_Room')")
     @PostMapping("/save")
     public String save(
 
@@ -160,7 +161,7 @@ public class RoomController {
         return "create";
     }
 
-    // ===== EDIT =====
+    @PreAuthorize("hasAuthority('Edit_Room')")
     @GetMapping("/edit/{id}")
     public String edit(
             @PathVariable Long id,
@@ -181,7 +182,7 @@ public class RoomController {
         return "create";
     }
 
-    // ===== UPDATE (ĐH CẬP NHẬT LOGIC UPLOAD) =====
+  @PreAuthorize("hasAuthority('Edit_Room')")
     @PostMapping("/update")
     public String update(
 
@@ -267,9 +268,12 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
-    // ===== DELETE =====
-    @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
+
+    @PreAuthorize("hasAuthority('Detele_Room')")
+    @GetMapping("/room/delete/{id}")
+    public String deleteRoom(
+            @PathVariable Long id
+    ) {
 
         service.delete(id);
 
@@ -330,34 +334,6 @@ public class RoomController {
 
         // lưu
         service.save(room);
-
-        return "redirect:/rooms";
-    }
-
-    // ===== XÓA PHÒNG (API MỚI) =====
-    @GetMapping("/room/delete/{id}")
-    public String deleteRoom(
-            @PathVariable Long id
-    // ===== SEARCH NÂNG CAO =====
-    @GetMapping("/rooms/search")
-    public String searchRooms(
-
-            @RequestParam(required = false)
-            String keyword,
-
-            @RequestParam(required = false)
-            RoomStatus status,
-
-            @RequestParam(required = false)
-            String roomType,
-
-            Model model
-    ) {
-
-        service.delete(id);
-        if (keyword != null && keyword.trim().isEmpty()) {
-            keyword = null;
-        }
 
         return "redirect:/rooms";
     }

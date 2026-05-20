@@ -34,6 +34,25 @@ public class Room {
     @NotBlank(message = "Mô tả không được để trống")
     private String description;
 
+    // ===== CẤU HÌNH MÁY TÍNH (MỚI THÊM) =====
+    @NotBlank(message = "CPU không được để trống")
+    private String cpu;
+
+    @NotBlank(message = "RAM không được để trống")
+    private String ram;
+
+    @NotBlank(message = "VGA không được để trống")
+    private String vga;
+
+    @NotBlank(message = "SSD không được để trống")
+    private String ssd;
+
+    @NotBlank(message = "Màn hình không được để trống")
+    private String monitor;
+
+    // ===== ẢNH PHÒNG =====
+    private String image;
+
     @Enumerated(EnumType.STRING)
     private RoomStatus status;
 
@@ -76,6 +95,53 @@ public class Room {
         return description;
     }
 
+    // ===== GETTER/SETTER CẤU HÌNH MÁY TÍNH (MỚI THÊM) =====
+    public String getCpu() {
+        return cpu;
+    }
+
+    public void setCpu(String cpu) {
+        this.cpu = cpu;
+    }
+
+    public String getRam() {
+        return ram;
+    }
+
+    public void setRam(String ram) {
+        this.ram = ram;
+    }
+
+    public String getVga() {
+        return vga;
+    }
+
+    public void setVga(String vga) {
+        this.vga = vga;
+    }
+
+    public String getSsd() {
+        return ssd;
+    }
+
+    public void setSsd(String ssd) {
+        this.ssd = ssd;
+    }
+
+    public String getMonitor() {
+        return monitor;
+    }
+
+    public void setMonitor(String monitor) {
+        this.monitor = monitor;
+    }
+
+    // =======================================================
+
+    public String getImage() {
+        return image;
+    }
+
     public RoomStatus getStatus() {
         return status;
     }
@@ -106,6 +172,10 @@ public class Room {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public void setStatus(RoomStatus status) {

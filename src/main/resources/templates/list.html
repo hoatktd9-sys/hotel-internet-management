@@ -39,6 +39,18 @@
 
         .room-card:hover{
             transform:translateY(-5px);
+        /* CSS CHO ẢNH (MỚI THÊM) */
+        .room-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
         }
 
         .room-name{
@@ -162,7 +174,24 @@
             <div th:if="${r.image != null}" style="margin-bottom: 15px;">
                 <img th:src="${r.image}" alt="Room Image" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px;">
             </div>
-            
+
+        <div class="room-card" th:each="r : ${list}">
+
+            <!-- ẢNH PHÒNG (MỚI THÊM) -->
+            <div>
+
+                <!-- CÓ ẢNH -->
+                <img th:if="${r.image != null}"
+                     th:src="@{'/uploads/' + ${r.image}}"
+                     class="room-image">
+
+                <!-- KHÔNG CÓ ẢNH -->
+                <img th:if="${r.image == null}"
+                     src="https://via.placeholder.com/400x200?text=No+Image"
+                     class="room-image">
+
+            </div>
+
             <!-- TÊN PHÒNG -->
             <div class="room-name"
                  th:text="${r.roomName}">
@@ -279,6 +308,12 @@
                 </a>
 
                 <!-- HOÀN TẤT DỌN DẸP -->
+                <!-- CHUYỂN DỌN DẸP (ĐÃ CẬP NHẬT) -->
+                <a th:if="${r.status.name() == 'AVAILABLE'}"
+                   th:href="@{/change-status/{id}/{status}(id=${r.id},status='CLEANING')}"
+                   class="btn btn-warning">
+                    Dọn dẹp
+                </a>
 
                 <a th:if="${r.status.name() == 'CLEANING'}"
                    th:href="@{/room/available/{id}(id=${r.id})}"
@@ -286,6 +321,18 @@
 
                     Hoàn tất dọn dẹp
 
+                <!-- CHUYỂN BẢO TRÌ (ĐÃ CẬP NHẬT) -->
+                <a th:if="${r.status.name() == 'AVAILABLE'}"
+                   th:href="@{/change-status/{id}/{status}(id=${r.id},status='MAINTENANCE')}"
+                   class="btn btn-dark">
+                    Bảo trì
+                </a>
+
+                <!-- KẾT THÚC BẢO TRÌ -->
+                <a th:if="${r.status.name() == 'MAINTENANCE'}"
+                   th:href="@{/room/available/{id}(id=${r.id})}"
+                   class="btn btn-success">
+                    Kết thúc bảo trì
                 </a>
 
             </div>

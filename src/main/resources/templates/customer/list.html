@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 
 <head>
     <meta charset="UTF-8">
@@ -17,7 +17,9 @@
 
         <h2>Quản lý khách hàng</h2>
         <div class="d-flex.justify-content-between.mb-4">
-            <a href="/customers/create" class="btn btn-success">
+            <a href="/customers/create" class="btn btn-success"
+               sec:authorize="hasAuthority('Create_Customer')"
+            >
                 + Thêm khách hàng
             </a>
             <a href="/rooms" class="btn btn-secondary text-white">Quản lý phòng</a>
@@ -49,6 +51,7 @@
                 <div class="d-flex gap-2">
                     <!-- SỬA -->
                     <a th:href="@{/customers/edit/{id}(id=${c.id})}"
+                       sec:authorize="hasAuthority('Edit_Customer')"
                        class="btn btn-warning btn-sm">
                         Sửa
                     </a>
@@ -56,6 +59,7 @@
                     <!-- XÓA -->
                     <a th:href="@{/customers/delete/{id}(id=${c.id})}"
                        class="btn btn-danger btn-sm"
+                       sec:authorize="hasAuthority('Delete_Customer')"
                        onclick="return confirm('Bạn có chắc muốn xóa khách hàng này?')">
                         Xóa
                     </a>

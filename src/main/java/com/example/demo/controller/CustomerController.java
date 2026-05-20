@@ -5,6 +5,7 @@ import com.example.demo.service.CustomerService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -20,21 +21,21 @@ public class CustomerController {
         this.service = service;
     }
 
-    // ===== DANH SÁCH =====
+    @PreAuthorize("hasAuthority('View_Customer')")
     @GetMapping
     public String list(Model model) {
         model.addAttribute("list", service.findAll());
         return "customer/list";
     }
 
-    // ===== FORM THÊM =====
+    @PreAuthorize("hasAuthority('Create_Customer')")
     @GetMapping("/create")
     public String create(Model model) {
         model.addAttribute("customer", new Customer());
         return "customer/create";
     }
 
-    // ===== LƯU KHÁCH MỚI =====
+    @PreAuthorize("hasAuthority('Create_Customer')")
     @PostMapping("/save")
     public String save(
             @Valid @ModelAttribute("customer") Customer customer,
@@ -47,7 +48,7 @@ public class CustomerController {
         return "redirect:/customers";
     }
 
-    // ===== FORM SỬA =====
+    @PreAuthorize("hasAuthority('Edit_Customer')")
     @GetMapping("/edit/{id}")
     public String edit(
             @PathVariable Long id,
@@ -64,7 +65,7 @@ public class CustomerController {
         return "customer/create";
     }
 
-    // ===== UPDATE =====
+    @PreAuthorize("hasAuthority('Edit_Customer')")
     @PostMapping("/update")
     public String update(
             @Valid @ModelAttribute("customer") Customer customer,
@@ -82,7 +83,7 @@ public class CustomerController {
         return "redirect:/customers";
     }
 
-    // ===== XÓA (ĐÃ CẬP NHẬT XỬ LÝ LỖI) =====
+    @PreAuthorize("hasAuthority('Delete_Customer')")
     @GetMapping("/delete/{id}")
     public String delete(
             @PathVariable Long id,

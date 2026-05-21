@@ -15,26 +15,34 @@ public class CheckInService {
     private CheckInRepository checkInRepository;
 
     // ===== LẤY TOÀN BỘ =====
+
     public List<CheckIn> getAll(){
+
         return checkInRepository.findAll();
     }
 
     // ===== TÌM THEO ID =====
+
     public CheckIn findById(Long id){
+
         return checkInRepository
                 .findById(id)
                 .orElseThrow();
     }
 
-    // ===== TÌM CHECK-IN ĐANG HOẠT ĐỘNG THEO PHÒNG =====
+    // ===== CHECK-IN ĐANG HOẠT ĐỘNG =====
+
     public CheckIn findActiveByRoomId(Long roomId){
+
         return checkInRepository
-                .findByRoomIdAndCheckOutTimeIsNull(roomId);
+                .findByRoomIdAndCheckOutTimeIsNull(roomId)
+                .orElse(null);
     }
 
     // ===== LƯU =====
+
     public void save(CheckIn checkIn){
+
         checkInRepository.save(checkIn);
     }
-
 }

@@ -3,38 +3,55 @@ package com.example.demo.model;
 import com.example.demo.enumtype.RoomStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.SoftDelete;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "room")
+@Getter
+@Setter
+@SoftDelete // Kích hoạt xóa mềm Hibernate 7 (Tự động thêm & quản lý cột 'deleted')
 public class Room {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ================= THÔNG TIN PHÒNG =================
+
     @NotBlank(message = "Tên phòng không được để trống")
-    @Column(unique = true)
+    @Column(name = "room_name", unique = true, nullable = false)
     private String roomName;
 
     @NotNull(message = "Giá phòng không được để trống")
     @DecimalMin(value = "50000.0", message = "Giá phòng phải lớn hơn 50.000 VNĐ")
+    @Column(nullable = false)
     private Double price;
 
     @NotNull(message = "Số máy tính không được để trống")
     @Min(value = 1, message = "Số máy tính phải lớn hơn 0")
+    @Column(name = "computer_count", nullable = false)
     private Integer computerCount;
 
-    @NotNull(message = "Loại phòng không được để trống")
-    @ManyToOne
-    @JoinColumn(name = "room_type_id")
-    private RoomType roomType;
+    @NotBlank(message = "Mô tả không được để trống")
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     private String image;
 
-    @NotBlank(message = "Mô tả không được để trống")
-    private String description;
+    // ================= LOẠI PHÒNG =================
 
-    // ===== CẤU HÌNH MÁY TÍNH (MỚI THÊM) =====
+    @NotNull(message = "Loại phòng không được để trống")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "room_type_id", nullable = false)
+    private RoomType roomType;
+
+    // ================= CẤU HÌNH MÁY =================
+
     @NotBlank(message = "CPU không được để trống")
     private String cpu;
 
@@ -50,135 +67,19 @@ public class Room {
     @NotBlank(message = "Màn hình không được để trống")
     private String monitor;
 
-    // ===== ẢNH PHÒNG =====
-    private String image;
+    // ================= TRẠNG THÁI =================
 
     @Enumerated(EnumType.STRING)
     private RoomStatus status;
 
-    @OneToMany(mappedBy = "room", cascade = CascadeType.REMOVE)
-    private java.util.List<CheckIn> checkIns;
+    // ================= CHECK IN =================
+    // Bỏ CascadeType.ALL và orphanRemoval để tránh xóa nhầm lịch sử CheckIn khi xóa phòng
+    @OneToMany(mappedBy = "room")
+    private List<CheckIn> checkIns = new ArrayList<>();
 
-    // ===== Constructor =====
+    // ================= CONSTRUCTOR =================
 
     public Room() {
         this.status = RoomStatus.AVAILABLE;
-    }
-
-    // ===== Getter Setter =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getRoomName() {
-        return roomName;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public Integer getComputerCount() {
-        return computerCount;
-    }
-
-    public RoomType getRoomType() {
-        return roomType;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    // ===== GETTER/SETTER CẤU HÌNH MÁY TÍNH (MỚI THÊM) =====
-    public String getCpu() {
-        return cpu;
-    }
-
-    public void setCpu(String cpu) {
-        this.cpu = cpu;
-    }
-
-    public String getRam() {
-        return ram;
-    }
-
-    public void setRam(String ram) {
-        this.ram = ram;
-    }
-
-    public String getVga() {
-        return vga;
-    }
-
-    public void setVga(String vga) {
-        this.vga = vga;
-    }
-
-    public String getSsd() {
-        return ssd;
-    }
-
-    public void setSsd(String ssd) {
-        this.ssd = ssd;
-    }
-
-    public String getMonitor() {
-        return monitor;
-    }
-
-    public void setMonitor(String monitor) {
-        this.monitor = monitor;
-    }
-
-    // =======================================================
-
-    public String getImage() {
-        return image;
-    }
-
-    public RoomStatus getStatus() {
-        return status;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setRoomName(String roomName) {
-        this.roomName = roomName;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public void setComputerCount(Integer computerCount) {
-        this.computerCount = computerCount;
-    }
-
-    public void setRoomType(RoomType roomType) {
-        this.roomType = roomType;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public void setStatus(RoomStatus status) {
-        this.status = status;
     }
 }

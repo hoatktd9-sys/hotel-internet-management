@@ -2,90 +2,126 @@ package com.example.demo.service;
 
 import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.model.Room;
+import com.example.demo.repository.CheckInRepository;
 import com.example.demo.repository.RoomRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
-import com.example.demo.repository.RoomRepository;
+
 import java.util.List;
 
 @Service
 public class RoomService {
 
-    private final RoomRepository roomrepository;
+    private final RoomRepository roomRepository;
     private final RoomTypeService roomTypeService;
+    private final CheckInRepository checkInRepository;
 
-    public RoomService(RoomRepository repository, RoomTypeService roomTypeService) {
-        this.roomrepository = repository;
+    public RoomService(
+            RoomRepository roomRepository,
+            RoomTypeService roomTypeService,
+            CheckInRepository checkInRepository
+    ) {
+
+        this.roomRepository = roomRepository;
         this.roomTypeService = roomTypeService;
+        this.checkInRepository = checkInRepository;
     }
 
-    // ===== LẤY TOÀN BỘ PHÒNG =====
+    // ===== LẤY TOÀN BỘ =====
+
     public List<Room> findAll() {
-        return roomrepository.findAll();
+        return roomRepository.findAll();
     }
 
-    // ===== GET ALL =====
     public List<Room> getAll() {
-        return roomrepository.findAll();
-    }
-
-    // ===== KIỂM TRA TÊN PHÒNG TỒN TẠI =====
-    public boolean existsByRoomName(String roomName) {
-        return roomrepository.existsByRoomName(roomName);
+        return roomRepository.findAll();
     }
 
     // ===== TÌM THEO ID =====
+
     public Room findById(Long id) {
-        return roomrepository.findById(id).orElseThrow();
+
+        return roomRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Không tìm thấy phòng"));
     }
 
-    // ===== LƯU PHÒNG =====
+    // ===== KIỂM TRA TÊN =====
+
+    public boolean existsByRoomName(String roomName) {
+        return roomRepository.existsByRoomName(roomName);
+    }
+
+    // ===== LƯU =====
+
     public void save(Room room) {
-        roomrepository.save(room);
+        roomRepository.save(room);
     }
 
-    // ===== XÓA PHÒNG =====
+    // ===== XÓA MỀM =====
+    @Transactional
     public void delete(Long id) {
-        roomrepository.deleteById(id);
+        // 1. Kiểm tra xem phòng này hiện tại có lượt Check-in nào đang hoạt động (chưa check-out) không
+        boolean isRoomOccupied = checkInRepository.findByRoomIdAndCheckOutTimeIsNull(id).isPresent();
+
+        if (isRoomOccupied) {
+            throw new RuntimeException("Không thể xóa phòng này! Phòng hiện đang có khách đang sử dụng (Chưa hoàn tất Check-out).");
+        }
+
+        // 2. Nếu phòng trống (không có khách đang ngồi), tiến hành xóa mềm
+        // Nhờ có @SoftDelete ở Entity Room, lệnh này sẽ tự động chuyển thành UPDATE room SET deleted = true WHERE id = ?
+        roomRepository.deleteById(id);
     }
 
-    // ===== SEARCH THEO GIÁ =====
+    // ===== SEARCH GIÁ =====
+
     public List<Room> search(Double price) {
-        return roomrepository.search(price);
+        return roomRepository.search(price);
     }
 
-    // ===== TÌM THEO TRẠNG THÁI =====
+    // ===== TÌM THEO STATUS =====
+
     public List<Room> findByStatus(RoomStatus status) {
-        return roomrepository.findByStatus(status);
+        return roomRepository.findByStatus(status);
     }
 
-    // ===== TÌM THEO LOẠI PHÒNG =====
+    // ===== TÌM THEO ROOM TYPE =====
+
     public List<Room> findByRoomType(String roomType) {
-        return roomrepository.findByRoomType(roomType);
+        return roomRepository.findByRoomType(roomType);
     }
 
-    // ===== TÌM THEO TÊN PHÒNG =====
+    // ===== SEARCH TÊN =====
+
     public List<Room> searchByName(String keyword) {
-        return roomrepository.findByRoomNameContainingIgnoreCase(keyword);
+
+        return roomRepository
+                .findByRoomNameContainingIgnoreCase(keyword);
     }
 
-    // ===== ĐỔI TRẠNG THÁI =====
-    public void updateStatus(Long id, RoomStatus status) {
+    // ===== UPDATE STATUS =====
+
+    public void updateStatus(
+            Long id,
+            RoomStatus status
+    ) {
 
         Room room = findById(id);
 
         room.setStatus(status);
 
-        roomrepository.save(room);
+        roomRepository.save(room);
     }
 
-    // ===== SEARCH NÂNG CAO (MỚI THÊM) =====
+    // ===== SEARCH NÂNG CAO =====
+
     public List<Room> searchRooms(
             String keyword,
             RoomStatus status,
             String roomType
     ) {
 
-        return roomrepository.searchRooms(
+        return roomRepository.searchRooms(
                 keyword,
                 status,
                 roomType

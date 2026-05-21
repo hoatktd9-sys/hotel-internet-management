@@ -3,71 +3,215 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý khách hàng</title>
+    <title>Quản lý phòng internet</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <style>
+        body {
+            background: #f4f6f9;
+            padding: 30px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .room-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .room-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .room-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .room-info {
+            margin-bottom: 10px;
+            font-size: 17px;
+        }
+
+        .status {
+            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .available {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .occupied {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .cleaning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .maintenance {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .btn-group-custom {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
 
-<div class="container mt-5">
+<div class="container">
 
-    <div class="d-flex justify-content-between mb-4">
+    <!-- HEADER -->
+    <div class="top-bar">
+        <h1>Quản lý phòng internet</h1>
+        <div class="d-flex gap-2">
+            <!-- THÊM PHÒNG -->
+            <a href="/create" class="btn btn-success">+ Thêm phòng</a>
 
-        <h2>Quản lý khách hàng</h2>
-        <div class="d-flex.justify-content-between.mb-4">
-            <a href="/customers/create" class="btn btn-success">
-                + Thêm khách hàng
-            </a>
-            <a href="/rooms" class="btn btn-secondary text-white">Quản lý phòng</a>
+            <!-- QUẢN LÝ LOẠI PHÒNG -->
+            <a href="/room-types" class="btn btn-info text-white">Quản lý loại phòng</a>
+
+            <!-- QUẢN LÝ KHÁCH HÀNG -->
+            <a href="/customers" class="btn btn-secondary text-white">Quản lý khách hàng</a>
+
+            <!-- CHECK-IN -->
+            <a href="/checkin" class="btn btn-primary">Check-in</a>
+
+            <!-- LỊCH SỬ -->
+            <a href="/checkin/history" class="btn btn-dark">Lịch sử</a>
         </div>
     </div>
 
-    <table class="table table-bordered table-hover bg-white">
+    <!-- DANH SÁCH PHÒNG -->
+    <div class="room-grid">
 
-        <thead class="table-dark">
+        <div class="room-card" th:each="r : ${list}">
 
-        <tr>
+            <!-- ẢNH PHÒNG -->
+            <div>
+                <!-- CÓ ẢNH -->
+                <img th:if="${r.image != null and r.image != ''}"
+                     th:src="@{'/uploads/' + ${r.image}}"
+                     class="room-image" alt="Room Image">
 
-            <th>ID</th>
-            <th>Họ tên</th>
-            <th>CCCD</th>
-            <th>Số điện thoại</th>
-            <th>Hành động</th>
-        </tr>
+                <!-- KHÔNG CÓ ẢNH -->
+                <img th:if="${r.image == null or r.image == ''}"
+                     src="https://via.placeholder.com/400x200?text=No+Image"
+                     class="room-image" alt="No Image">
+            </div>
 
-        </thead>
+            <!-- TÊN PHÒNG -->
+            <div class="room-name" th:text="${r.roomName}"></div>
 
-        <tbody>
-        <tr th:each="c : ${list}">
-            <td th:text="${c.id}"></td>
-            <td th:text="${c.fullName}"></td>
-            <td th:text="${c.identityNumber}"></td>
-            <td th:text="${c.phoneNumber}"></td>
-            <td>
-                <div class="d-flex gap-2">
-                    <!-- SỬA -->
-                    <a th:href="@{/customers/edit/{id}(id=${c.id})}"
-                       class="btn btn-warning btn-sm">
-                        Sửa
-                    </a>
+            <!-- GIÁ -->
+            <div class="room-info">
+                <b>Giá:</b>
+                <span th:text="${#numbers.formatDecimal(r.price,1,0)}"></span> VNĐ / giờ
+            </div>
 
-                    <!-- XÓA -->
-                    <a th:href="@{/customers/delete/{id}(id=${c.id})}"
-                       class="btn btn-danger btn-sm"
-                       onclick="return confirm('Bạn có chắc muốn xóa khách hàng này?')">
-                        Xóa
-                    </a>
-                </div>
-            </td>
-        </tr>
-        </tbody>
+            <!-- SỐ MÁY -->
+            <div class="room-info">
+                <b>Số máy:</b>
+                <span th:text="${r.computerCount}"></span>
+            </div>
 
-    </table>
+            <!-- LOẠI -->
+            <div class="room-info">
+                <b>Loại:</b>
+                <span th:text="${r.roomType != null ? r.roomType.name : ''}"></span>
+            </div>
 
+            <!-- STATUS -->
+            <div>
+                <!-- AVAILABLE -->
+                <span th:if="${r.status.name() == 'AVAILABLE'}" class="status available">Trống</span>
+
+                <!-- OCCUPIED -->
+                <span th:if="${r.status.name() == 'OCCUPIED'}" class="status occupied">Đang sử dụng</span>
+
+                <!-- CLEANING -->
+                <span th:if="${r.status.name() == 'CLEANING'}" class="status cleaning">Đang dọn dẹp</span>
+
+                <!-- MAINTENANCE -->
+                <span th:if="${r.status.name() == 'MAINTENANCE'}" class="status maintenance">Bảo trì</span>
+            </div>
+
+            <!-- MÔ TẢ -->
+            <div class="room-info">
+                <b>Mô tả:</b>
+                <span th:text="${r.description}"></span>
+            </div>
+
+            <!-- BUTTON ACTIONS -->
+            <div class="btn-group-custom">
+
+                <!-- SỬA (Đã đồng bộ đường dẫn gốc) -->
+                <a th:href="@{/edit/{id}(id=${r.id})}" class="btn btn-warning">Sửa</a>
+
+                <!-- XÓA (ĐÃ SỬA: Đổi từ /room/delete thành /delete để khớp Controller) -->
+                <a th:href="@{/delete/{id}(id=${r.id})}" class="btn btn-danger"
+                   onclick="return confirm('Bạn có chắc muốn xóa phòng này?')">Xóa</a>
+
+                <!-- CHECK-OUT -->
+                <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/checkout/{id}(id=${r.id})}" class="btn btn-primary">Check-out</a>
+
+                <!-- CHUYỂN DỌN DẸP -->
+                <a th:if="${r.status.name() == 'AVAILABLE'}"
+                   th:href="@{/change-status/{id}/{status}(id=${r.id},status='CLEANING')}" class="btn btn-warning">Dọn dẹp</a>
+
+                <!-- HOÀN TẤT DỌN DẸP -->
+                <a th:if="${r.status.name() == 'CLEANING'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success">Hoàn tất dọn dẹp</a>
+
+                <!-- CHUYỂN BẢO TRÌ -->
+                <a th:if="${r.status.name() == 'AVAILABLE'}"
+                   th:href="@{/change-status/{id}/{status}(id=${r.id},status='MAINTENANCE')}" class="btn btn-dark">Bảo trì</a>
+
+                <!-- KẾT THÚC BẢO TRÌ -->
+                <a th:if="${r.status.name() == 'MAINTENANCE'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success">Kết thúc bảo trì</a>
+
+            </div>
+        </div>
+
+    </div>
 </div>
 
 </body>
-
 </html>

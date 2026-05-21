@@ -47,4 +47,23 @@ public class CustomerService {
 
     }
 
+    // ===== TÌM KIẾM (MỚI THÊM) =====
+
+    public List<Customer> search(String keyword) {
+
+        // nếu rỗng -> trả toàn bộ
+        if (keyword == null || keyword.trim().isEmpty()) {
+
+            return repository.findAll();
+
+        }
+
+        return repository
+                .findByFullNameContainingIgnoreCaseOrPhoneNumberContaining(
+                        keyword,
+                        keyword
+                );
+
+    }
+
 }

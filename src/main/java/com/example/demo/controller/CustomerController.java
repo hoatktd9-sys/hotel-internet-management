@@ -105,4 +105,27 @@ public class CustomerController {
         }
         return "redirect:/customers";
     }
+
+    // ===== TÌM KIẾM KHÁCH HÀNG (MỚI THÊM & TỐI ƯU PATH) =====
+    @GetMapping("/search")
+    public String searchCustomer(
+
+            @RequestParam(required = false)
+            String keyword,
+
+            Model model
+    ) {
+
+        model.addAttribute(
+                "list",
+                service.search(keyword)
+        );
+
+        model.addAttribute(
+                "keyword",
+                keyword
+        );
+
+        return "customer/list";
+    }
 }

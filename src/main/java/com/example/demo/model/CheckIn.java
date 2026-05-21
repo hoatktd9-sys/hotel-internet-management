@@ -12,26 +12,32 @@ public class CheckIn {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== KHÁCH =====
+    // ===== CUSTOMER =====
+
     @ManyToOne
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
-    // ===== PHÒNG =====
+    // ===== ROOM =====
+
     @ManyToOne
     @JoinColumn(name = "room_id")
     private Room room;
 
-    // ===== THỜI GIAN CHECK-IN =====
+    // ===== CHECK-IN =====
+
     private LocalDateTime checkInTime;
 
-    // ===== THỜI GIAN CHECK-OUT =====
+    // ===== CHECK-OUT =====
+
     private LocalDateTime checkOutTime;
 
-    // ===== TỔNG SỐ GIỜ =====
+    // ===== TOTAL HOURS =====
+
     private Double totalHours;
 
-    // ===== TỔNG TIỀN (MỚI THÊM) =====
+    // ===== TOTAL PRICE =====
+
     private Double totalPrice;
 
     // ===== GETTER SETTER =====
@@ -84,12 +90,10 @@ public class CheckIn {
         this.totalHours = totalHours;
     }
 
-    // GETTER CHO TỔNG TIỀN
     public Double getTotalPrice() {
         return totalPrice;
     }
 
-    // SETTER CHO TỔNG TIỀN
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
     }

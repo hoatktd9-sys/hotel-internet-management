@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Tạo Vai Trò</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">Tạo Mới Vai Trò</h3>
+        </div>
+        <div class="card-body">
+
+            <form th:action="@{/admin/roles/save}" th:object="${role}" method="post">
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nhập Vị Trí</label>
+                    <input type="text" th:field="*{roleName}" class="form-control" placeholder="Ví dụ: ADMIN, MANAGER,..." />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mô Tả</label>
+                    <input type="text" th:field="*{description}" class="form-control" placeholder="Nhập mô tả ngắn gọn cho vai trò này" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label d-block fw-bold">Quyền Hạn</label>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#permissionModal">
+                         Bấm vào đây để chọn Quyền Hạn
+                    </button>
+                </div>
+
+                <hr>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Lưu Vai Trò</button>
+                    <a th:href="@{/admin/roles}" class="btn btn-light border">Quay Lại</a>
+                </div>
+
+                <div class="modal fade" id="permissionModal" tabindex="-1" aria-labelledby="permissionModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="permissionModalLabel">Danh Sách Quyền Hạn</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted small">Mặc định không có quyền nào được chọn. Hãy tích vào các quyền muốn cấp:</p>
+
+                                <div class="form-check mb-2" th:each="p : ${allPermissions}">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{permissions}"
+                                           th:value="${p.id}"
+                                           th:id="'perm-' + ${p.id}">
+                                    <label class="form-check-label" th:for="'perm-' + ${p.id}">
+                                        <strong th:text="${p.permissionName}">CREATE_USER</strong>
+                                        <span class="text-muted" th:text="${p.description != null ? ' - ' + p.description : ''}"></span>
+                                    </label>
+                                </div>
+
+                            </div>
+                            <div class="modal-body bg-light text-end py-2">
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Xác nhận xong</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

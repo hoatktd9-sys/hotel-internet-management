@@ -140,6 +140,9 @@
         <label>Loại phòng</label>
         <div class="warning-box" th:if="${roomTypes == null or #lists.isEmpty(roomTypes)}">
             Chưa có loại phòng nào. Vui lòng <a href="/room-types">tạo loại phòng trước</a>
+
+        <div th:if="${roomTypes == null or roomTypes.empty}" style="color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+            Chưa có loại phòng nào. Vui lòng <a href="/admin/room-types" style="color: #0056b3; font-weight: bold;">tạo loại phòng trước</a>.
         </div>
 
         <select th:field="*{roomType.id}" class="form-control" required>

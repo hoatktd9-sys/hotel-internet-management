@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.Set;
 
 @Entity
+@Table(name = "users")
 @Table(name = "users") // ĐÃ THÊM: Đổi tên table thành 'users' để tránh xung đột từ khóa trong DB
 public class User {
     @Id
@@ -37,6 +38,14 @@ public class User {
         this.username = username;
         this.password = password;
         this.email = email;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     // ===== Getter & Setter =====

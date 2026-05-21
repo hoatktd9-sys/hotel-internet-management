@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8">
@@ -104,12 +104,33 @@
     <!-- HEADER -->
     <div class="top-bar">
         <h1>Quản lý phòng internet</h1>
+        <div sec:authorize="isAuthenticated()" class="ms-auto me-3 align-self-center">
+            Xin chào, <span sec:authentication="name" class="fw-bold text-primary">Tên_User</span>!
+        </div>
+
         <div class="d-flex gap-2">
             <!-- THÊM PHÒNG -->
             <a href="/create" class="btn btn-success">+ Thêm phòng</a>
+             <a href="/create" sec:authorize="hasRole('ADMIN')"  class="btn btn-success">
+                + Thêm phòng
+
+            </a>
+            <a href="admin/users" sec:authorize="hasRole('ADMIN')"  class="btn btn-success">
+                Danh sách Nhân Viên
+
+            </a>
+
 
             <!-- QUẢN LÝ LOẠI PHÒNG -->
             <a href="/room-types" class="btn btn-info text-white">Quản lý loại phòng</a>
+
+            <a href="admin/room-types"
+               class="btn btn-info text-white"
+               sec:authorize="hasRole('ADMIN')">
+
+                Quản lý loại phòng
+
+            </a>
 
             <!-- QUẢN LÝ KHÁCH HÀNG -->
             <a href="/customers" class="btn btn-secondary text-white">Quản lý khách hàng</a>
@@ -119,6 +140,18 @@
 
             <!-- LỊCH SỬ -->
             <a href="/checkin/history" class="btn btn-dark">Lịch sử</a>
+
+            <a href="/checkin/history"
+               class="btn btn-dark" sec:authorize="hasAuthority('View_History')" >
+                Lịch sử
+
+            </a>
+            <a href="/logout"
+               class="btn"  >
+                Đăng xuất
+
+            </a>
+
         </div>
     </div>
 
@@ -189,9 +222,26 @@
                 <!-- SỬA -->
                 <a th:href="@{/edit/{id}(id=${r.id})}" class="btn btn-warning">Sửa</a>
 
+                <a th:href="@{/edit/{id}(id=${r.id})}"
+                   class="btn btn-warning"
+                sec:authorize="hasAuthority('Edit_Room')">
+
+                    Sửa
+
+                </a>
+
                 <!-- XÓA -->
                 <a th:href="@{/room/delete/{id}(id=${r.id})}" class="btn btn-danger"
                    onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
+
+                <a th:href="@{/room/delete/{id}(id=${r.id})}"
+                   class="btn btn-danger"
+                   sec:authorize="hasAuthority('Delete_Room')"
+                   onclick="return confirm('Bạn có chắc muốn xóa?')">
+
+                    Xóa
+
+                </a>
 
                 <!-- CHECK-OUT -->
                 <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/checkout/{id}(id=${r.id})}" class="btn btn-primary">Check-out</a>

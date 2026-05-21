@@ -17,5 +17,5 @@ public class UserService {
     public List<User> getAll(){return userRepository.findAll();}
     public User getById(Long id){return userRepository.findById(id).orElse(null);}
     public void save(User user){userRepository.save(user);}
-    public void delete(Long id){userRepository.deleteById(id);}
+    public void deleteByid(Long id){userRepository.deleteById(id);}
 }

@@ -5,6 +5,7 @@ import com.example.demo.model.User;
 import com.example.demo.repository.PermissionRepository;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -119,4 +120,16 @@ public class AdminUserController {
         }
         return "redirect:/admin/roles";
     }
+    @GetMapping("/users/delete/{id}")
+    String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try{
+            userRepository.deleteById(id);
+            redirectAttributes.addFlashAttribute("success","Xóa thành công");
+             return "redirect:/admin/users";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error","Xóa Thất Bại");
+            return "redirect:/admin/users";
+        }
+    }
+
 }

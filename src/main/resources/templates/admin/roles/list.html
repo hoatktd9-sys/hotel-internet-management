@@ -67,6 +67,9 @@
                 <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal" th:data-bs-target="'#editPermissionsModal' + ${r.id}">
                     Chỉnh sửa Quyền
                 </button>
+                <a th:href="@{/admin/roles/delete/{id}(id=${r.id})}" class="btn btn-sm btn-danger">
+                    Xóa Quyền
+                </a>
             </td>
         </tr>
         </tbody>

@@ -7,13 +7,6 @@ import com.example.demo.service.RoomService;
 import com.example.demo.service.RoomTypeService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -39,6 +32,7 @@ public class RoomController {
         this.roomTypeService = roomTypeService;
     }
 
+    // ===== HOME =====
     @PreAuthorize("hasAuthority('View_Room')")
     @GetMapping("/")
     public String home() {
@@ -64,8 +58,7 @@ public class RoomController {
     }
 
     // ===== LƯU PHÒNG =====
-    // ===== SAVE =====
-  @PreAuthorize("hasAuthority('Create_Room')")
+    @PreAuthorize("hasAuthority('Create_Room')")
     @PostMapping("/save")
     public String save(
             @Valid @ModelAttribute("room") Room room,
@@ -137,9 +130,8 @@ public class RoomController {
     }
 
     // ===== CẬP NHẬT PHÒNG =====
+    @PreAuthorize("hasAuthority('Edit_Room')")
     @PostMapping("/update/{id}")
-  @PreAuthorize("hasAuthority('Edit_Room')")
-    @PostMapping("/update")
     public String update(
             @PathVariable Long id,
             @Valid @ModelAttribute("room") Room room,
@@ -206,7 +198,8 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
-    // ===== XÓA (ĐÃ SỬA MAPPING PHÙ HỢP VỚI URL GIAO DIỆN) =====
+    // ===== XÓA =====
+    @PreAuthorize("hasAuthority('Delete_Room')")
     @GetMapping("/room/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
@@ -215,18 +208,8 @@ public class RoomController {
         } catch (Exception e) {
             System.err.println("===== LỖI LOGIC HOẶC RÀNG BUỘC KHI XÓA PHÒNG =====");
             e.printStackTrace();
-            // Đẩy thông báo Exception thực tế từ Service lên giao diện
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-
-    @PreAuthorize("hasAuthority('Detele_Room')")
-    @GetMapping("/room/delete/{id}")
-    public String deleteRoom(
-            @PathVariable Long id
-    ) {
-
-        service.delete(id);
-
         return "redirect:/rooms";
     }
 
@@ -288,19 +271,5 @@ public class RoomController {
         model.addAttribute("selectedRoomType", roomType);
 
         return "list";
-    public String makeRoomAvailable(
-            @PathVariable Long id
-    ) {
-
-        // tìm phòng
-        Room room = service.findById(id);
-
-        // chuyển sang AVAILABLE
-        room.setStatus(RoomStatus.AVAILABLE);
-
-        // lưu
-        service.save(room);
-
-        return "redirect:/rooms";
     }
 }

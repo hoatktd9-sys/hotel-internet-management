@@ -40,6 +40,8 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
+            width: 100%; /* Cho nút bấm rộng toàn màn hình form cho đẹp */
+            margin-top: 10px;
         }
         button:hover {
             background: #218838;
@@ -84,6 +86,14 @@
             margin-bottom: 15px;
             border-radius: 5px;
         }
+        .warning-box a {
+            color: #0056b3;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .warning-box a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -94,58 +104,46 @@
         Thêm phòng internet
     </h1>
 
-    <!-- GIẢI PHÁP TRIỆT ĐỂ: Đưa toán tử 3 ngôi vào trong cặp ngoặc, trả về chuỗi thuần và để @() bọc ngoài cùng -->
     <form th:action="@{${isEdit ? '/update/' + room.id : '/save'}}"
           th:object="${room}"
           method="post"
           enctype="multipart/form-data">
 
-        <!-- ID (Vẫn giữ để đảm bảo an toàn dữ liệu nội bộ) -->
         <input type="hidden" th:field="*{id}">
 
-        <!-- GIỮ ẢNH CŨ -->
         <input type="hidden" th:field="*{image}">
 
-        <!-- ẢNH HIỆN TẠI -->
         <div th:if="${room.image != null and room.image != ''}">
-            <label>Ảnh hiện tại:</label>
+            <label class="fw-bold">Ảnh hiện tại:</label>
             <img th:src="@{/uploads/{img}(img=${room.image})}"
                  class="preview-image"
                  alt="Room Preview">
         </div>
 
-        <!-- UPLOAD ẢNH -->
         <label>Ảnh phòng</label>
         <input type="file" name="imageFile" accept="image/*">
 
-        <!-- THÔNG TIN PHÒNG -->
         <div class="section-title">Thông tin phòng</div>
 
-        <!-- TÊN PHÒNG -->
         <label>Tên phòng</label>
         <input type="text" th:field="*{roomName}">
         <div class="error" th:if="${#fields.hasErrors('roomName')}" th:errors="*{roomName}"></div>
 
-        <!-- GIÁ -->
         <label>Giá phòng (VNĐ/giờ)</label>
         <input type="number" th:field="*{price}">
         <div class="error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
 
-        <!-- SỐ MÁY -->
         <label>Số máy tính</label>
         <input type="number" th:field="*{computerCount}">
         <div class="error" th:if="${#fields.hasErrors('computerCount')}" th:errors="*{computerCount}"></div>
 
-        <!-- LOẠI PHÒNG -->
         <label>Loại phòng</label>
-        <div class="warning-box" th:if="${roomTypes == null or #lists.isEmpty(roomTypes)}">
-            Chưa có loại phòng nào. Vui lòng <a href="/room-types">tạo loại phòng trước</a>
 
-        <div th:if="${roomTypes == null or roomTypes.empty}" style="color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
-            Chưa có loại phòng nào. Vui lòng <a href="/admin/room-types" style="color: #0056b3; font-weight: bold;">tạo loại phòng trước</a>.
+        <div class="warning-box" th:if="${roomTypes == null or #lists.isEmpty(roomTypes)}">
+            Chưa có loại phòng nào. Vui lòng <a href="/room-types">tạo loại phòng trước</a>.
         </div>
 
-        <select th:field="*{roomType.id}" class="form-control" required>
+        <select th:field="*{roomType.id}" required>
             <option value="">-- Chọn loại phòng --</option>
             <option th:each="type : ${roomTypes}"
                     th:value="${type.id}"
@@ -154,35 +152,28 @@
         </select>
         <div class="error" th:if="${#fields.hasErrors('roomType')}" th:errors="*{roomType}"></div>
 
-        <!-- MÔ TẢ -->
         <label>Mô tả phòng</label>
         <textarea rows="4" th:field="*{description}"></textarea>
         <div class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
 
-        <!-- CẤU HÌNH -->
         <div class="section-title">Cấu hình máy tính</div>
 
-        <!-- CPU -->
         <label>CPU</label>
         <input type="text" th:field="*{cpu}" placeholder="Ví dụ: Intel Core i5 12400F">
         <div class="error" th:if="${#fields.hasErrors('cpu')}" th:errors="*{cpu}"></div>
 
-        <!-- RAM -->
         <label>RAM</label>
         <input type="text" th:field="*{ram}" placeholder="Ví dụ: 16GB DDR4">
         <div class="error" th:if="${#fields.hasErrors('ram')}" th:errors="*{ram}"></div>
 
-        <!-- VGA -->
         <label>VGA</label>
         <input type="text" th:field="*{vga}" placeholder="Ví dụ: RTX 3060">
         <div class="error" th:if="${#fields.hasErrors('vga')}" th:errors="*{vga}"></div>
 
-        <!-- SSD -->
         <label>SSD</label>
         <input type="text" th:field="*{ssd}" placeholder="Ví dụ: SSD NVME 512GB">
         <div class="error" th:if="${#fields.hasErrors('ssd')}" th:errors="*{ssd}"></div>
 
-        <!-- MÀN HÌNH -->
         <label>Màn hình</label>
         <input type="text" th:field="*{monitor}" placeholder="Ví dụ: 27 inch 144Hz">
         <div class="error" th:if="${#fields.hasErrors('monitor')}" th:errors="*{monitor}"></div>

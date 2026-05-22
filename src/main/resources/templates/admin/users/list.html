@@ -44,7 +44,7 @@
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
     
     <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createUserModal">
-        + Tạo tài khoản
+        Tạo tài khoản
     </button>
     
     <table class="table table-bordered table-striped bg-white">
@@ -82,6 +82,10 @@
                 <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" th:data-bs-target="'#resetPasswordModal' + ${u.id}">
                     Reset Password
                 </button>
+                <a th:href="@{/admin/users/delete/{id}(id=${u.id})}" class="btn btn-sm btn-danger" onclick="confirm(`bạn có muốn xóa người dùng này `)">
+                    Xóa
+                </a>
+
             </td>
         </tr>
         </tbody>

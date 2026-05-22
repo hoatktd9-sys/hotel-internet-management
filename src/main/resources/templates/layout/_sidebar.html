@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<aside th:fragment="sidebar" class="sidebar">
+    <!-- Brand Logo -->
+    <a href="/" class="sidebar-brand">
+        <i class="bi bi-controller"></i>
+        <span>Gaming Hotel</span>
+    </a>
+
+    <!-- Menu Items -->
+    <ul class="sidebar-menu">
+        <li class="sidebar-menu-header">Hệ thống</li>
+        
+        <!-- Quản lý phòng -->
+        <li class="sidebar-item">
+            <a th:href="@{/rooms}" 
+               class="sidebar-link" 
+               th:classappend="${activePage == 'rooms' ? 'active' : ''}">
+                <i class="bi bi-door-open"></i>
+                <span>Quản lý phòng</span>
+            </a>
+        </li>
+
+        <!-- Check-in -->
+        <li class="sidebar-item">
+            <a th:href="@{/checkin}" 
+               class="sidebar-link" 
+               th:classappend="${activePage == 'checkin' ? 'active' : ''}">
+                <i class="bi bi-check2-circle"></i>
+                <span>Nhận phòng</span>
+            </a>
+        </li>
+
+        <!-- Lịch sử giao dịch -->
+        <li class="sidebar-item" sec:authorize="hasAuthority('View_History')">
+            <a th:href="@{/checkin/history}" 
+               class="sidebar-link" 
+               th:classappend="${activePage == 'history' ? 'active' : ''}">
+                <i class="bi bi-clock-history"></i>
+                <span>Lịch sử giao dịch</span>
+            </a>
+        </li>
+
+        <!-- Quản lý khách hàng -->
+        <li class="sidebar-item">
+            <a th:href="@{/customers}" 
+               class="sidebar-link" 
+               th:classappend="${activePage == 'customers' ? 'active' : ''}">
+                <i class="bi bi-people"></i>
+                <span>Khách hàng</span>
+            </a>
+        </li>
+
+        <!-- Quản trị viên (Chỉ hiển thị cho Admin) -->
+        <li sec:authorize="hasRole('ADMIN')">
+            <div class="sidebar-menu-header">Quản trị viên</div>
+        </li>
+
+        <!-- Quản lý loại phòng -->
+        <li class="sidebar-item" sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/admin/room-types}" 
+               class="sidebar-link" 
+               th:classappend="${activePage == 'roomTypes' ? 'active' : ''}">
+                <i class="bi bi-grid-3x3-gap"></i>
+                <span>Loại phòng</span>
+            </a>
+        </li>
+
+        <!-- Quản lý nhân viên -->
+        <li class="sidebar-item" sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/admin/users}" 
+               class="sidebar-link" 
+               th:classappend="${activePage == 'users' ? 'active' : ''}">
+                <i class="bi bi-person-badge"></i>
+                <span>Nhân viên</span>
+            </a>
+        </li>
+
+        <!-- Quản lý quyền -->
+        <li class="sidebar-item" sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/admin/roles}" 
+               class="sidebar-link" 
+               th:classappend="${activePage == 'roles' ? 'active' : ''}">
+                <i class="bi bi-shield-check"></i>
+                <span>Quyền (Roles)</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- User Profile & Logout at Bottom -->
+    <div class="sidebar-footer" sec:authorize="isAuthenticated()">
+        <div class="user-profile-widget">
+            <div class="user-avatar" th:text="${#authentication != null ? #strings.substring(#authentication.name, 0, 1).toUpperCase() : 'U'}">U</div>
+            <div class="user-info">
+                <span class="user-name" sec:authentication="name">User Name</span>
+                <span class="user-role" sec:authorize="hasRole('ADMIN')">Administrator</span>
+                <span class="user-role" sec:authorize="!hasRole('ADMIN')">Nhân viên</span>
+            </div>
+        </div>
+        <form th:action="@{/logout}" method="post" class="mt-2">
+            <button type="submit" class="btn btn-logout-sidebar w-100 border-0 bg-transparent text-start">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </form>
+    </div>
+</aside>
+
+</body>
+</html>

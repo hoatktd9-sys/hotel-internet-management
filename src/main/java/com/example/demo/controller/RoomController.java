@@ -219,7 +219,7 @@ public class RoomController {
         try {
             if (!imageFile.isEmpty()) {
                 String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-                Path uploadPath = Paths.get("src/main/resources/static/images");
+                Path uploadPath = Paths.get("uploads/images");
                 if (!Files.exists(uploadPath)) {
                     Files.createDirectories(uploadPath);
                 }

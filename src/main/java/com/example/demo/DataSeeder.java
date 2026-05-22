@@ -2,8 +2,10 @@ package com.example.demo;
 
 import com.example.demo.model.Permission;
 import com.example.demo.model.Role;
+import com.example.demo.model.User;
 import com.example.demo.service.PermissionService;
 import com.example.demo.service.RoleService;
+import com.example.demo.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +18,12 @@ import java.util.Set;
 public class DataSeeder implements CommandLineRunner {
     private final PermissionService permissionService;
     private final RoleService roleService;
+    private final UserService userService;
 
-    public DataSeeder(PermissionService permissionService, RoleService roleService) {
+    public DataSeeder(PermissionService permissionService, RoleService roleService, UserService userService) {
         this.permissionService = permissionService;
         this.roleService = roleService;
+        this.userService = userService;
     }
     @Transactional
     public void run(String... args) throws Exception {
@@ -47,7 +51,23 @@ public class DataSeeder implements CommandLineRunner {
         }
         roleAdmin.setPermissions(AdminPermissions);
         roleService.saveRole(roleAdmin);
+
+        String defaultAdminUsername = "admin";
+        if (userService.findByUsername(defaultAdminUsername).isEmpty()) {
+            User adminUser = new User();
+            adminUser.setUsername(defaultAdminUsername);
+            adminUser.setPassword("admin123");
+            adminUser.setEmail("admin@gmail.com");
+            adminUser.setActive(true);
+            Set<Role> roles = new HashSet<>();
+            roles.add(roleAdmin);
+            adminUser.setRoles(roles);
+            userService.save(adminUser);
+            System.out.println(">>> Đã khởi tạo thành công tài khoản admin mặc định! <<<");
+        }
     }
+
+
 
     public Permission createPermissionIfNotFound(String permissionName, String description) {
         return permissionService.findByName(permissionName).orElseGet(() -> {

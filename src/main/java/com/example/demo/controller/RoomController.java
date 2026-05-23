@@ -71,15 +71,9 @@ public class RoomController {
   @PreAuthorize("hasAuthority('Create_Room')")
     @PostMapping("/save")
     public String save(
-
             @Valid @ModelAttribute("room")
             Room room,
-
             BindingResult result,
-
-            @RequestParam("imageFile")
-            MultipartFile imageFile,
-
             @RequestParam("imageFile") MultipartFile imageFile,
             Model model
     ) throws IOException {
@@ -188,12 +182,7 @@ public class RoomController {
 
             @Valid @ModelAttribute("room")
             Room room,
-
             BindingResult result,
-
-            @RequestParam("imageFile")
-            MultipartFile imageFile,
-
             @RequestParam("imageFile") MultipartFile imageFile,
             Model model
     ) throws IOException {
@@ -272,11 +261,16 @@ public class RoomController {
     @PreAuthorize("hasAuthority('Detele_Room')")
     @GetMapping("/room/delete/{id}")
     public String deleteRoom(
-            @PathVariable Long id
+            @PathVariable Long id,
+            Model model
     ) {
-
-        service.delete(id);
-
+        try {
+            service.delete(id);
+        } catch (Exception e) {
+            model.addAttribute("error", "Không thể xóa phòng vì có lịch sử check-in liên quan!");
+            model.addAttribute("list", service.findAll());
+            return "list";
+        }
         return "redirect:/rooms";
     }
 

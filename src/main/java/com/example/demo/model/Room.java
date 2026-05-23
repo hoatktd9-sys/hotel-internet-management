@@ -4,6 +4,8 @@ import com.example.demo.enumtype.RoomStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "room")
 public class Room {
@@ -34,7 +36,6 @@ public class Room {
     @NotBlank(message = "Mô tả không được để trống")
     private String description;
 
-    // ===== CẤU HÌNH MÁY TÍNH (MỚI THÊM) =====
     @NotBlank(message = "CPU không được để trống")
     private String cpu;
 
@@ -50,52 +51,97 @@ public class Room {
     @NotBlank(message = "Màn hình không được để trống")
     private String monitor;
 
-    // ===== ẢNH PHÒNG =====
-    private String image;
-
     @Enumerated(EnumType.STRING)
     private RoomStatus status;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.REMOVE)
     private java.util.List<CheckIn> checkIns;
 
-    // ===== Constructor =====
-
     public Room() {
         this.status = RoomStatus.AVAILABLE;
     }
 
-    // ===== Getter Setter =====
+    public Room(Long id, String roomName, Double price, Integer computerCount, RoomType roomType, String image, String description, String cpu, String ram, String vga, String ssd, String monitor, RoomStatus status, List<CheckIn> checkIns) {
+        this.id = id;
+        this.roomName = roomName;
+        this.price = price;
+        this.computerCount = computerCount;
+        this.roomType = roomType;
+        this.image = image;
+        this.description = description;
+        this.cpu = cpu;
+        this.ram = ram;
+        this.vga = vga;
+        this.ssd = ssd;
+        this.monitor = monitor;
+        this.status = status;
+        this.checkIns = checkIns;
+    }
+
+    public String getSsd() {
+        return ssd;
+    }
+
+    public void setSsd(String ssd) {
+        this.ssd = ssd;
+    }
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getRoomName() {
         return roomName;
     }
 
+    public void setRoomName(String roomName) {
+        this.roomName = roomName;
+    }
+
     public Double getPrice() {
         return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 
     public Integer getComputerCount() {
         return computerCount;
     }
 
+    public void setComputerCount(Integer computerCount) {
+        this.computerCount = computerCount;
+    }
+
     public RoomType getRoomType() {
         return roomType;
+    }
+
+    public void setRoomType(RoomType roomType) {
+        this.roomType = roomType;
     }
 
     public String getImage() {
         return image;
     }
 
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     public String getDescription() {
         return description;
     }
 
-    // ===== GETTER/SETTER CẤU HÌNH MÁY TÍNH (MỚI THÊM) =====
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getCpu() {
         return cpu;
     }
@@ -120,14 +166,6 @@ public class Room {
         this.vga = vga;
     }
 
-    public String getSsd() {
-        return ssd;
-    }
-
-    public void setSsd(String ssd) {
-        this.ssd = ssd;
-    }
-
     public String getMonitor() {
         return monitor;
     }
@@ -136,49 +174,19 @@ public class Room {
         this.monitor = monitor;
     }
 
-    // =======================================================
-
-    public String getImage() {
-        return image;
-    }
-
     public RoomStatus getStatus() {
         return status;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setRoomName(String roomName) {
-        this.roomName = roomName;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public void setComputerCount(Integer computerCount) {
-        this.computerCount = computerCount;
-    }
-
-    public void setRoomType(RoomType roomType) {
-        this.roomType = roomType;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
     public void setStatus(RoomStatus status) {
         this.status = status;
+    }
+
+    public List<CheckIn> getCheckIns() {
+        return checkIns;
+    }
+
+    public void setCheckIns(List<CheckIn> checkIns) {
+        this.checkIns = checkIns;
     }
 }

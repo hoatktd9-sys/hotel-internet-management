@@ -131,5 +131,23 @@ public class AdminUserController {
             return "redirect:/admin/users";
         }
     }
+@PostMapping("/update-user/{id}")
+    String updateUser(@PathVariable long id,
+                      @RequestParam String newUsername,
+                      @RequestParam String newEmail,
+                      RedirectAttributes redirectAttributes) {
+        try{
+            User user = userRepository.findById(id).orElseThrow();
+            user.setUsername(newUsername);
+            user.setEmail(newEmail);
+            userRepository.save(user);
+            redirectAttributes.addFlashAttribute("success","update Thành Công");
+            return "redirect:/admin/users";
+        }
+        catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error","Chỉnh sửa Thất Bại");
+            return "redirect:/admin/users";
+        }
 
+}
 }

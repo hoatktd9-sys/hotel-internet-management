@@ -39,12 +39,18 @@ public class CustomerController {
     @PostMapping("/save")
     public String save(
             @Valid @ModelAttribute("customer") Customer customer,
-            BindingResult result
+            BindingResult result,
+            Model model
     ) {
         if (result.hasErrors()) {
             return "customer/create";
         }
-        service.save(customer);
+        try {
+            service.save(customer);
+        } catch (Exception e) {
+            model.addAttribute("error", "Lưu thất bại: CCCD đã tồn tại hoặc có lỗi xảy ra!");
+            return "customer/create";
+        }
         return "redirect:/customers";
     }
 
@@ -79,7 +85,13 @@ public class CustomerController {
             );
             return "customer/create";
         }
-        service.save(customer);
+        try {
+            service.save(customer);
+        } catch (Exception e) {
+            model.addAttribute("isEdit", true);
+            model.addAttribute("error", "Cập nhật thất bại: CCCD đã tồn tại hoặc có lỗi xảy ra!");
+            return "customer/create";
+        }
         return "redirect:/customers";
     }
 

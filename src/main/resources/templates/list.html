@@ -3,43 +3,41 @@
 
 <head>
     <meta charset="UTF-8">
-
     <title>Quản lý phòng internet</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-
-        body{
-            background:#f4f6f9;
-            padding:30px;
+        body {
+            background: #f4f6f9;
+            padding: 30px;
         }
 
-        .top-bar{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:30px;
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
         }
 
-        .room-grid{
-            display:grid;
-            grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
-            gap:20px;
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
 
-        .room-card{
-            background:white;
-            border-radius:15px;
-            padding:20px;
-            box-shadow:0 0 10px rgba(0,0,0,0.1);
-            transition:0.3s;
+        .room-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: 0.3s;
         }
 
-        .room-card:hover{
-            transform:translateY(-5px);
-        /* CSS CHO ẢNH (MỚI THÊM) */
+        .room-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* CSS CHO ẢNH (ĐÃ SỬA LỖI LỒNG NGOẶC) */
         .room-image {
             width: 100%;
             height: 200px;
@@ -49,300 +47,117 @@
             border: 1px solid #ddd;
         }
 
-        .room-card:hover {
-            transform: translateY(-5px);
+        .room-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
         }
 
-        .room-name{
-            font-size:24px;
-            font-weight:bold;
-            margin-bottom:15px;
+        .room-info {
+            margin-bottom: 10px;
+            font-size: 17px;
         }
 
-        .room-info{
-            margin-bottom:10px;
-            font-size:17px;
+        .status {
+            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
         }
 
-        .status{
-            font-weight:bold;
-            padding:6px 14px;
-            border-radius:20px;
-            display:inline-block;
-            margin-bottom:15px;
+        .available {
+            background: #d4edda;
+            color: #155724;
         }
 
-        .available{
-            background:#d4edda;
-            color:#155724;
+        .occupied {
+            background: #f8d7da;
+            color: #721c24;
         }
 
-        .occupied{
-            background:#f8d7da;
-            color:#721c24;
+        .cleaning {
+            background: #fff3cd;
+            color: #856404;
         }
 
-        .cleaning{
-            background:#fff3cd;
-            color:#856404;
+        .btn-group-custom {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
         }
-
-        .btn-group-custom{
-            display:flex;
-            flex-wrap:wrap;
-            gap:10px;
-            margin-top:15px;
-        }
-
     </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-    <!-- HEADER -->
+    <div th:replace="~{fragments/layout :: navbar('Quản lý phòng internet')}"></div>
 
-    <div class="top-bar">
-
-        <h1>Quản lý phòng internet</h1>
-        <div sec:authorize="isAuthenticated()" class="ms-auto me-3 align-self-center">
-            Xin chào, <span sec:authentication="name" class="fw-bold text-primary">Tên_User</span>!
-        </div>
-
-        <div class="d-flex gap-2">
-
-            <!-- THÊM PHÒNG -->
-             <a href="/create" sec:authorize="hasRole('ADMIN')"  class="btn btn-success">
-                + Thêm phòng
-
-            </a>
-            <a href="admin/users" sec:authorize="hasRole('ADMIN')"  class="btn btn-success">
-                Danh sách Nhân Viên
-
-            </a>
-
-
-            <!-- QUẢN LÝ LOẠI PHÒNG -->
-
-            <a href="admin/room-types"
-               class="btn btn-info text-white"
-               sec:authorize="hasRole('ADMIN')">
-
-                Quản lý loại phòng
-
-            </a>
-
-            <!-- QUẢN LÝ KHÁCH HÀNG -->
-            <a href="/customers" class="btn btn-secondary text-white">Quản lý khách hàng</a>
-
-            <!-- CHECK-IN -->
-
-            <a href="/checkin"
-               class="btn btn-primary">
-
-                Check-in
-
-            </a>
-
-            <!-- LỊCH SỬ -->
-
-            <a href="/checkin/history"
-               class="btn btn-dark" sec:authorize="hasAuthority('View_History')" >
-                Lịch sử
-
-            </a>
-            <a href="/logout"
-               class="btn"  >
-                Đăng xuất
-
-            </a>
-
-        </div>
-
-    </div>
-
-    <!-- DANH SÁCH PHÒNG -->
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 
     <div class="room-grid">
 
-        <div class="room-card"
-             th:each="r : ${list}">
-
-            <!-- HÌNH ẢNH -->
-            <div th:if="${r.image != null}" style="margin-bottom: 15px;">
-                <img th:src="${r.image}" alt="Room Image" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px;">
-            </div>
-
         <div class="room-card" th:each="r : ${list}">
 
-            <!-- ẢNH PHÒNG (MỚI THÊM) -->
             <div>
-
-                <!-- CÓ ẢNH -->
                 <img th:if="${r.image != null}"
                      th:src="@{'/uploads/' + ${r.image}}"
-                     class="room-image">
+                     class="room-image" alt="Room Image">
 
-                <!-- KHÔNG CÓ ẢNH -->
                 <img th:if="${r.image == null}"
                      src="https://via.placeholder.com/400x200?text=No+Image"
-                     class="room-image">
-
+                     class="room-image" alt="No Image Available">
             </div>
 
-            <!-- TÊN PHÒNG -->
-            <div class="room-name"
-                 th:text="${r.roomName}">
-            </div>
-
-            <!-- GIÁ -->
+            <div class="room-name" th:text="${r.roomName}"></div>
 
             <div class="room-info">
-
                 <b>Giá:</b>
-
-                <span th:text="${#numbers.formatDecimal(r.price,1,0)}"></span>
-
-                VNĐ / giờ
-
+                <span th:text="${#numbers.formatDecimal(r.price,1,0)}"></span> VNĐ / giờ
             </div>
 
-            <!-- SỐ MÁY -->
-
             <div class="room-info">
-
                 <b>Số máy:</b>
-
                 <span th:text="${r.computerCount}"></span>
-
             </div>
-
-            <!-- LOẠI -->
 
             <div class="room-info">
-
                 <b>Loại:</b>
-
                 <span th:text="${r.roomType != null ? r.roomType.name : ''}"></span>
-
             </div>
-
-            <!-- STATUS -->
 
             <div>
-
-                <!-- AVAILABLE -->
-
-                <span th:if="${r.status.name() == 'AVAILABLE'}"
-                      class="status available">
-
-                    Trống
-
-                </span>
-
-                <!-- OCCUPIED -->
-
-                <span th:if="${r.status.name() == 'OCCUPIED'}"
-                      class="status occupied">
-
-                    Đang sử dụng
-
-                </span>
-
-                <!-- CLEANING -->
-
-                <span th:if="${r.status.name() == 'CLEANING'}"
-                      class="status cleaning">
-
-                    Đang dọn dẹp
-
-                </span>
-
+                <span th:if="${r.status.name() == 'AVAILABLE'}" class="status available">Trống</span>
+                <span th:if="${r.status.name() == 'OCCUPIED'}" class="status occupied">Đang sử dụng</span>
+                <span th:if="${r.status.name() == 'CLEANING'}" class="status cleaning">Đang dọn dẹp</span>
             </div>
-
-            <!-- MÔ TẢ -->
 
             <div class="room-info">
-
                 <b>Mô tả:</b>
-
                 <span th:text="${r.description}"></span>
-
             </div>
-
-            <!-- BUTTON -->
 
             <div class="btn-group-custom">
+                <a th:href="@{/edit/{id}(id=${r.id})}" class="btn btn-warning" sec:authorize="hasAuthority('Edit_Room')">Sửa</a>
 
-                <!-- SỬA -->
+                <a th:href="@{/room/delete/{id}(id=${r.id})}" class="btn btn-danger" sec:authorize="hasAuthority('Delete_Room')"
+                   onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
 
-                <a th:href="@{/edit/{id}(id=${r.id})}"
-                   class="btn btn-warning"
-                sec:authorize="hasAuthority('Edit_Room')">
+                <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/checkout/{id}(id=${r.id})}" class="btn btn-primary">Check-out</a>
 
-                    Sửa
+                <a th:if="${r.status.name() == 'AVAILABLE'}" th:href="@{/change-status/{id}/{status}(id=${r.id},status='CLEANING')}" class="btn btn-warning">Dọn dẹp</a>
 
-                </a>
+                <a th:if="${r.status.name() == 'CLEANING'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success">Hoàn tất dọn dẹp</a>
 
-                <!-- XÓA -->
+                <a th:if="${r.status.name() == 'AVAILABLE'}" th:href="@{/change-status/{id}/{status}(id=${r.id},status='MAINTENANCE')}" class="btn btn-dark">Bảo trì</a>
 
-                <a th:href="@{/room/delete/{id}(id=${r.id})}"
-                   class="btn btn-danger"
-                   sec:authorize="hasAuthority('Delete_Room')"
-                   onclick="return confirm('Bạn có chắc muốn xóa?')">
-
-                    Xóa
-
-                </a>
-
-                <!-- CHECK-OUT -->
-
-                <a th:if="${r.status.name() == 'OCCUPIED'}"
-                   th:href="@{/checkout/{id}(id=${r.id})}"
-                   class="btn btn-primary">
-
-                    Check-out
-
-                </a>
-
-                <!-- HOÀN TẤT DỌN DẸP -->
-                <!-- CHUYỂN DỌN DẸP (ĐÃ CẬP NHẬT) -->
-                <a th:if="${r.status.name() == 'AVAILABLE'}"
-                   th:href="@{/change-status/{id}/{status}(id=${r.id},status='CLEANING')}"
-                   class="btn btn-warning">
-                    Dọn dẹp
-                </a>
-
-                <a th:if="${r.status.name() == 'CLEANING'}"
-                   th:href="@{/room/available/{id}(id=${r.id})}"
-                   class="btn btn-success">
-
-                    Hoàn tất dọn dẹp
-
-                <!-- CHUYỂN BẢO TRÌ (ĐÃ CẬP NHẬT) -->
-                <a th:if="${r.status.name() == 'AVAILABLE'}"
-                   th:href="@{/change-status/{id}/{status}(id=${r.id},status='MAINTENANCE')}"
-                   class="btn btn-dark">
-                    Bảo trì
-                </a>
-
-                <!-- KẾT THÚC BẢO TRÌ -->
-                <a th:if="${r.status.name() == 'MAINTENANCE'}"
-                   th:href="@{/room/available/{id}(id=${r.id})}"
-                   class="btn btn-success">
-                    Kết thúc bảo trì
-                </a>
-
+                <a th:if="${r.status.name() == 'MAINTENANCE'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success">Kết thúc bảo trì</a>
             </div>
 
-        </div>
-
-    </div>
-
-</div>
+        </div> </div> </div>
 
 </body>
-
 </html>

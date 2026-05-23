@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<header th:fragment="topbar" class="topbar">
+    <!-- Sidebar Toggle (Mobile) -->
+    <button class="btn border-0 text-white d-lg-none" type="button" id="sidebarToggle" aria-label="Toggle Navigation">
+        <i class="bi bi-list fs-3"></i>
+    </button>
+
+    <!-- Page Title / Dynamic Context -->
+    <div class="d-none d-md-flex align-items-center gap-3">
+        <span class="badge bg-dark border border-secondary text-secondary-emphasis d-flex align-items-center gap-1">
+            <i class="bi bi-cpu-fill text-info"></i> Server: Online
+        </span>
+        <span class="badge bg-dark border border-secondary text-secondary-emphasis d-flex align-items-center gap-1">
+            <i class="bi bi-database-fill-check text-success"></i> DB Connected
+        </span>
+    </div>
+
+    <!-- Right Side Tools / User Greeting -->
+    <div class="d-flex align-items-center gap-3 ms-auto" sec:authorize="isAuthenticated()">
+        <div class="text-end d-none d-sm-block">
+            <div class="small text-muted">Xin chào,</div>
+            <div class="fw-bold text-white" sec:authentication="name">User Name</div>
+        </div>
+        
+        <!-- Action Notification Icons -->
+        <div class="dropdown">
+            <button class="btn btn-dark position-relative border-0 rounded-circle p-2" type="button" style="width: 40px; height: 40px;">
+                <i class="bi bi-bell-fill text-warning"></i>
+                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="margin-top: 5px; margin-left: -5px;">
+                    <span class="visually-hidden">New alerts</span>
+                </span>
+            </button>
+        </div>
+    </div>
+</header>
+
+</body>
+</html>

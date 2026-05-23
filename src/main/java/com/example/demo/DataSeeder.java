@@ -2,8 +2,10 @@ package com.example.demo;
 
 import com.example.demo.model.Permission;
 import com.example.demo.model.Role;
+import com.example.demo.model.User;
 import com.example.demo.service.PermissionService;
 import com.example.demo.service.RoleService;
+import com.example.demo.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +18,14 @@ import java.util.Set;
 public class DataSeeder implements CommandLineRunner {
     private final PermissionService permissionService;
     private final RoleService roleService;
+    private final UserService userService;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    public DataSeeder(PermissionService permissionService, RoleService roleService) {
+    public DataSeeder(PermissionService permissionService, RoleService roleService, UserService userService, org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.permissionService = permissionService;
         this.roleService = roleService;
+        this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
     }
     @Transactional
     public void run(String... args) throws Exception {
@@ -47,7 +53,46 @@ public class DataSeeder implements CommandLineRunner {
         }
         roleAdmin.setPermissions(AdminPermissions);
         roleService.saveRole(roleAdmin);
+
+        String defaultAdminUsername = "admin";
+        java.util.Optional<User> adminOpt = userService.findByUsername(defaultAdminUsername);
+        if (adminOpt.isEmpty()) {
+            User adminUser = new User();
+            adminUser.setUsername(defaultAdminUsername);
+            adminUser.setPassword(passwordEncoder.encode("admin123"));
+            adminUser.setEmail("admin@gmail.com");
+            adminUser.setActive(true);
+            Set<Role> roles = new HashSet<>();
+            roles.add(roleAdmin);
+            adminUser.setRoles(roles);
+            userService.save(adminUser);
+            System.out.println(">>> Đã khởi tạo thành công tài khoản admin mặc định! <<<");
+        } else {
+            User adminUser = adminOpt.get();
+            adminUser.setPassword(passwordEncoder.encode("admin123"));
+            adminUser.setActive(true);
+            if (adminUser.getRoles() == null || adminUser.getRoles().isEmpty()) {
+                Set<Role> roles = new HashSet<>();
+                roles.add(roleAdmin);
+                adminUser.setRoles(roles);
+            } else {
+                boolean hasAdmin = false;
+                for (Role r : adminUser.getRoles()) {
+                    if ("ADMIN".equals(r.getRoleName())) {
+                        hasAdmin = true;
+                        break;
+                    }
+                }
+                if (!hasAdmin) {
+                    adminUser.getRoles().add(roleAdmin);
+                }
+            }
+            userService.save(adminUser);
+            System.out.println(">>> Đã cập nhật mật khẩu mã hóa và quyền ADMIN cho tài khoản admin! <<<");
+        }
     }
+
+
 
     public Permission createPermissionIfNotFound(String permissionName, String description) {
         return permissionService.findByName(permissionName).orElseGet(() -> {

@@ -1,52 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý tài khoản - Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f8f9fa; }
-        .container { margin-top: 30px; }
-        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    </style>
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Quản lý tài khoản - Admin')}"></head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">Gaming Hotel</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link active" href="/admin/users">Nhân viên</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/roles">Quyền (Roles)</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <form th:action="@{/logout}" method="post">
-                        <button class="btn btn-outline-light nav-link" type="submit">Đăng xuất</button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
-
 <div class="container">
-    <h2>Quản lý tài khoản nhân viên</h2>
-    
+    <div th:replace="~{fragments/layout :: navbar('Quản lý nhân viên')}"></div>
     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-    
-    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createUserModal">
-        + Tạo tài khoản
-    </button>
-    
+
+    <div class="card-box">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Danh sách nhân viên</h3>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                + Tạo tài khoản
+            </button>
+        </div>
+
     <table class="table table-bordered table-striped bg-white">
         <thead class="table-dark">
         <tr>
@@ -71,24 +39,32 @@
                 <span th:each="r : ${u.roles}" class="badge bg-info me-1" th:text="${r.roleName}"></span>
             </td>
             <td>
-                <a th:href="@{/admin/users/toggle-lock/{id}(id=${u.id})}" 
+                <a th:href="@{/admin/users/toggle-lock/{id}(id=${u.id})}"
                    class="btn btn-sm" th:classappend="${u.isActive ? 'btn-warning' : 'btn-success'}"
                    th:text="${u.isActive ? 'Khóa' : 'Mở khóa'}"></a>
-                   
+
                 <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal" th:data-bs-target="'#assignRoleModal' + ${u.id}">
                     Gán Role
                 </button>
-                
+
                 <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" th:data-bs-target="'#resetPasswordModal' + ${u.id}">
                     Reset Password
+                </button>
+
+                <a th:href="@{/admin/users/delete/{id}(id=${u.id})}" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có muốn xóa người dùng này?')">
+                    Xóa
+                </a>
+
+                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" th:data-bs-target="'#updateModal' + ${u.id}">
+                    Edit
                 </button>
             </td>
         </tr>
         </tbody>
     </table>
+    </div>
 </div>
 
-<!-- Modal Create User -->
 <div class="modal fade" id="createUserModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -126,9 +102,7 @@
     </div>
 </div>
 
-<!-- Modals for Assign RoleController and Reset Password -->
 <div th:each="u : ${users}">
-    <!-- Assign RoleController Modal -->
     <div class="modal fade" th:id="'assignRoleModal' + ${u.id}" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -151,8 +125,7 @@
             </div>
         </div>
     </div>
-    
-    <!-- Reset Password Modal -->
+
     <div class="modal fade" th:id="'resetPasswordModal' + ${u.id}" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -174,8 +147,33 @@
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="modal fade" th:id="'updateModal' + ${u.id}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/admin/update-user/{id}(id=${u.id})}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" th:text="'Chỉnh sửa tài khoản: ' + ${u.username}"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>Tên mới</label>
+                            <input type="text" name="newUsername" th:value="${u.username}" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Email mới</label>
+                            <input type="email" name="newEmail" th:value="${u.email}" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-warning text-white">Thay Đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

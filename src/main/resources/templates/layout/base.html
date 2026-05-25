@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:fragment="layout(content, title)">
+
+<head th:replace="~{layout/_head :: head(${title})}"></head>
+
+<body class="bg-dark text-light">
+
+<div class="app-container">
+    <!-- Reusable Sidebar Menu -->
+    <aside th:replace="~{layout/_sidebar :: sidebar}"></aside>
+
+    <!-- Content Wrapper -->
+    <div class="main-wrapper">
+        <!-- Reusable Top Header Bar -->
+        <header th:replace="~{layout/_topbar :: topbar}"></header>
+
+        <!-- Main Body Injection -->
+        <main class="main-content">
+            <div th:replace="${content}"></div>
+        </main>
+    </div>
+</div>
+
+<!-- Reusable Javascript Scripts Bundle -->
+<th:block th:replace="~{layout/_scripts :: scripts}"></th:block>
+
+</body>
+</html>

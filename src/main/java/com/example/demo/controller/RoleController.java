@@ -9,10 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/roles")
@@ -48,5 +46,17 @@ public class RoleController {
        else {roleService.saveRole(role);
            return "redirect:/admin/roles";
        }
+    }
+    @GetMapping("/delete/{id}")
+    public String deleteRole(@PathVariable long id, RedirectAttributes redirectAttributes){
+            try{
+                roleService.deleteRoleById(id);
+                redirectAttributes.addFlashAttribute("success","Xóa thành công");
+                return "redirect:/admin/roles";
+            }
+            catch (Exception e) {
+                redirectAttributes.addFlashAttribute("error","Xóa thất bại");
+                return "redirect:/admin/roles";
+            }
     }
 }

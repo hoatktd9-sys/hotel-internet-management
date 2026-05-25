@@ -180,6 +180,7 @@ public class RoomController {
         Room oldRoom = roomService.findById(id);
         room.setStatus(oldRoom.getStatus());
 
+        // CHUẨN HÓA LOGIC UPLOAD ẢNH: Xóa bỏ đoạn Files.copy bị lỗi cú pháp, dùng cơ chế transferTo đồng bộ ổn định
         if (!imageFile.isEmpty()) {
             String uploadDir = new File("uploads").getAbsolutePath();
             File dir = new File(uploadDir);

@@ -100,16 +100,16 @@ public class CustomerController {
         return "customer/list";
     }
 
-    // ===== FEATURE: QUẢN LÝ KHÁCH VIP (MỚI THÊM) =====
-    @PreAuthorize("hasAuthority('Admin_Feature')") // Hoặc quyền tương đương của Admin nhóm bạn
+    // ===== FEATURE: QUẢN LÝ KHÁCH VIP (ĐÃ FIX PHÂN QUYỀN) =====
+    @PreAuthorize("hasAuthority('Edit_Customer')")
     @GetMapping("/toggle-vip/{id}")
     public String toggleVip(@PathVariable Long id) {
         service.toggleVip(id);
         return "redirect:/customers";
     }
 
-    // ===== FEATURE: KHÓA KHÁCH HÀNG (MỚI THÊM) =====
-    @PreAuthorize("hasAuthority('Admin_Feature')") // Hoặc quyền tương đương của Admin nhóm bạn
+    // ===== FEATURE: KHÓA KHÁCH HÀNG (ĐÃ FIX PHÂN QUYỀN) =====
+    @PreAuthorize("hasAuthority('Edit_Customer')")
     @GetMapping("/toggle-active/{id}")
     public String toggleActive(@PathVariable Long id) {
         service.toggleActive(id);

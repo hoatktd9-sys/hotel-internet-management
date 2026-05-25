@@ -15,7 +15,10 @@
     <div class="card-custom">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Quản lý dữ liệu khách hàng</h2>
-            <a href="/rooms" class="btn btn-secondary">← Quay lại danh sách phòng</a>
+            <div class="d-flex gap-2">
+                <a href="/customers/create" class="btn btn-success" sec:authorize="hasAuthority('Create_Customer')">+ Thêm khách hàng mới</a>
+                <a href="/rooms" class="btn btn-secondary">← Quay lại danh sách phòng</a>
+            </div>
         </div>
 
         <form th:action="@{/customers/search}" method="GET" class="row g-3 mb-4">
@@ -56,6 +59,8 @@
                     </td>
                     <td>
                         <div class="d-flex gap-2">
+                            <a th:href="@{/customers/edit/{id}(id=${c.id})}" class="btn btn-primary btn-sm" sec:authorize="hasAuthority('Edit_Customer')">Sửa</a>
+
                             <a th:href="@{/customers/toggle-vip/{id}(id=${c.id})}"
                                th:class="${c.vip} ? 'btn btn-outline-warning btn-sm' : 'btn btn-warning btn-sm'"
                                th:text="${c.vip} ? 'Hủy VIP' : 'Kích VIP'"></a>

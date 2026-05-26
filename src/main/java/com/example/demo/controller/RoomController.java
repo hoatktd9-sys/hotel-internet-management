@@ -57,7 +57,7 @@ public class RoomController {
         return "create";
     }
 
-    // ===== LƯU PHÒNG =====
+    // ===== LƯU PHÒNG (TẠO MỚI) =====
     @PreAuthorize("hasAuthority('Create_Room')")
     @PostMapping("/save")
     public String save(
@@ -102,8 +102,11 @@ public class RoomController {
         }
         room.setRoomType(managedRoomType);
 
+        // =========================================================================
+        // CHUẨN HÓA LOGIC LƯU ẢNH: TRỎ VÀO THƯ MỤC UPLOADS/IMAGES VÀ LƯU FILE TINH GỌN
+        // =========================================================================
         if (!imageFile.isEmpty()) {
-            String uploadDir = new File("uploads").getAbsolutePath();
+            String uploadDir = new File("uploads/images").getAbsolutePath(); // Sửa từ "uploads" -> "uploads/images"
             File dir = new File(uploadDir);
             if (!dir.exists()) {
                 dir.mkdirs();
@@ -111,7 +114,7 @@ public class RoomController {
             String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
             File saveFile = new File(dir, fileName);
             imageFile.transferTo(saveFile);
-            room.setImage(fileName);
+            room.setImage(fileName); // Chỉ lưu tên file tinh gọn dưới DB
         }
 
         room.setStatus(RoomStatus.AVAILABLE);
@@ -180,9 +183,11 @@ public class RoomController {
         Room oldRoom = roomService.findById(id);
         room.setStatus(oldRoom.getStatus());
 
-        // CHUẨN HÓA LOGIC UPLOAD ẢNH: Xóa bỏ đoạn Files.copy bị lỗi cú pháp, dùng cơ chế transferTo đồng bộ ổn định
+        // =========================================================================
+        // CHUẨN HÓA LOGIC CẬP NHẬT ẢNH: TRỎ VÀO THƯ MỤC UPLOADS/IMAGES KHI SỬA PHÒNG
+        // =========================================================================
         if (!imageFile.isEmpty()) {
-            String uploadDir = new File("uploads").getAbsolutePath();
+            String uploadDir = new File("uploads/images").getAbsolutePath(); // Sửa từ "uploads" -> "uploads/images"
             File dir = new File(uploadDir);
             if (!dir.exists()) {
                 dir.mkdirs();

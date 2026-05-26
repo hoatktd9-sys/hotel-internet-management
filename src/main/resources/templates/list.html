@@ -36,6 +36,7 @@
             <a href="/admin/room-types" class="btn btn-info text-white">Quản lý loại phòng</a>
 
             <a href="/customers" class="btn btn-secondary text-white">Quản lý khách hàng</a>
+            <a href="/service-categories" class="btn btn-warning text-white" sec:authorize="hasAuthority('Admin_Service')">Quản lý dịch vụ</a>
             <a href="/checkin" class="btn btn-primary">Check-in</a>
             <a href="/checkin/history" class="btn btn-dark">Lịch sử</a>
             <a href="/logout" class="btn btn-light border">Đăng xuất</a>
@@ -45,7 +46,7 @@
     <div class="room-grid">
         <div class="room-card" th:each="r : ${list}">
             <div>
-                <img th:if="${r.image != null and r.image != ''}" th:src="@{'/uploads/' + ${r.image}}" class="room-image" alt="Room Image">
+                <img th:if="${r.image != null and r.image != ''}" th:src="@{'/uploads/images/' + ${r.image}}" class="room-image" alt="Room Image">
                 <img th:if="${r.image == null or r.image == ''}" src="https://via.placeholder.com/400x200?text=No+Image" class="room-image" alt="No Image">
             </div>
 

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý nhóm dịch vụ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">QUẢN LÝ NHÓM DỊCH VỤ & SẢN PHẨM</h2>
+        <a href="/rooms" class="btn btn-secondary">← Quay lại sảnh chính</a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow p-4">
+                <h4 class="mb-3 text-secondary" th:text="${isEdit} ? 'Cập nhật nhóm' : 'Thêm nhóm mới'"></h4>
+
+                <form th:action="@{/service-categories/save}" th:object="${category}" method="post">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên nhóm dịch vụ</label>
+                        <input type="text" class="form-control" th:field="*{name}" placeholder="Ví dụ: Đồ ăn, Nước uống..." required>
+                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mô tả ngắn</label>
+                        <textarea class="form-control" th:field="*{description}" rows="3" placeholder="Nhập mô tả về nhóm này..."></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success w-100" th:text="${isEdit} ? 'Cập nhật' : 'Thêm mới'"></button>
+                        <a th:if="${isEdit}" href="/service-categories" class="btn btn-outline-secondary w-100">Hủy sửa</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow p-4">
+                <h4 class="mb-3 text-secondary">Danh sách nhóm hiện tại</h4>
+
+                <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                        <tr>
+                            <th style="width: 10%">ID</th>
+                            <th style="width: 30%">Tên nhóm</th>
+                            <th style="width: 40%">Mô tả</th>
+                            <th style="width: 20%" class="text-center">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="cat : ${categories}">
+                            <td th:text="${cat.id}"></td>
+                            <td class="fw-bold text-dark" th:text="${cat.name}"></td>
+                            <td th:text="${cat.description}"></td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/service-categories/edit/{id}(id=${cat.id})}" class="btn btn-warning text-white">Sửa</a>
+                                    <a th:href="@{/service-categories/delete/{id}(id=${cat.id})}" class="btn btn-danger"
+                                       onclick="return confirm('Bạn có chắc chắn muốn xóa nhóm này không?')">Xóa</a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(categories)}">
+                            <td colspan="4" class="text-center text-muted py-3">Chưa có nhóm dịch vụ nào được định nghĩa.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

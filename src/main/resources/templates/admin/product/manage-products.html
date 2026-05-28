@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Thực Đơn & Món Ăn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .main-title { color: #fd7e14; font-weight: bold; margin-bottom: 30px; text-transform: uppercase; }
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .card-header-custom { background-color: #ffffff; border-bottom: 2px solid #f1f1f1; font-weight: 600; color: #444; }
+        .table th { background-color: #212529; color: white; text-align: center; font-weight: 500; }
+        .table td { vertical-align: middle; text-align: center; }
+        .btn-custom-back { background-color: #6c757d; color: white; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="main-title mb-0">QUẢN LÝ CHI TIẾT THỰC ĐƠN MÓN ĂN / DỊCH VỤ</h2>
+        <a href="/service-categories" class="btn btn-custom-back px-3">← Quản lý nhóm dịch vụ</a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-4 col-lg-5">
+            <div class="card p-3">
+                <div class="card-header-custom py-2 mb-3">
+                    <h5 class="mb-0 fw-bold" th:text="${product.id != null} ? 'Cập Nhật Món Ăn' : 'Thêm Món Mới Vào Thực Đơn'">Thêm Món Mới</h5>
+                </div>
+                <div class="card-body p-0">
+                    <form th:action="@{/admin/products/save}" th:object="${product}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold small">Tên món ăn / nước uống <span class="text-danger">*</span></label>
+                            <input type="text" th:field="*{name}" id="name" class="form-control" placeholder="Ví dụ: Mì xào bò, Coca Cola, Sting...">
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="category" class="form-label fw-bold small">Thuộc danh mục nhóm lớn <span class="text-danger">*</span></label>
+                            <select th:field="*{category}" id="category" class="form-select">
+                                <option value="">-- Chọn nhóm danh mục --</option>
+                                <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
+                            </select>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label for="price" class="form-label fw-bold small">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" step="500" th:field="*{price}" id="price" class="form-control" placeholder="0">
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label for="stockQuantity" class="form-label fw-bold small">Số lượng tồn kho <span class="text-danger">*</span></label>
+                                <input type="number" th:field="*{stockQuantity}" id="stockQuantity" class="form-control" placeholder="0">
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('stockQuantity')}" th:errors="*{stockQuantity}"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold small">Mô tả ngắn hoặc ghi chú</label>
+                            <textarea th:field="*{description}" id="description" class="form-control" rows="3" placeholder="Nhập mô tả nguyên liệu, cách chế biến hoặc quy cách đóng gói..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <a th:if="${product.id != null}" href="/admin/products" class="btn btn-secondary w-100">Hủy sửa</a>
+                            <button type="submit" class="btn btn-success w-100 fw-bold" th:text="${product.id != null} ? 'Cập Nhật Món' : 'Thêm Vào Thực Đơn'">Thêm Mới</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8 col-lg-7">
+            <div class="card p-3">
+                <div class="card-header-custom py-2 mb-3">
+                    <h5 class="mb-0 fw-bold">Danh sách thực đơn hiện có trong hệ thống</h5>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th style="width: 60px;">ID</th>
+                            <th>Tên món / Sản phẩm</th>
+                            <th>Nhóm danh mục</th>
+                            <th>Giá bán</th>
+                            <th style="width: 110px;">Số lượng kho</th>
+                            <th>Ghi chú / Mô tả</th>
+                            <th style="width: 140px;">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(products)}">
+                            <td colspan="7" class="text-muted py-4">Chưa có sản phẩm nào được nhập. Hãy thêm món ăn ở form bên cạnh!</td>
+                        </tr>
+                        <tr th:each="prod : ${products}">
+                            <td th:text="${prod.id}" class="fw-bold">1</td>
+                            <td th:text="${prod.name}" class="text-start fw-semibold text-dark">Mì tôm</td>
+                            <td><span class="badge bg-info text-dark" th:text="${prod.category != null ? prod.category.name : 'Chưa phân nhóm'}">Đồ ăn</span></td>
+                            <td th:text="${#numbers.formatDecimal(prod.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'" class="text-end text-danger fw-bold">15,000 VNĐ</td>
+                            <td>
+                                <span th:text="${prod.stockQuantity}" th:class="${prod.stockQuantity <= 5} ? 'badge bg-danger' : 'badge bg-success'">50</span>
+                            </td>
+                            <td th:text="${prod.description}" class="text-start text-muted small">Mô tả sản phẩm...</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a th:href="@{/admin/products/edit/{id}(id=${prod.id})}" class="btn btn-warning fw-bold text-dark">Sửa</a>
+                                    <a th:href="@{/admin/products/delete/{id}(id=${prod.id})}"
+                                       class="btn btn-danger fw-bold"
+                                       onclick="return confirm('Bạn có chắc chắn muốn gỡ bỏ món này khỏi thực đơn không?')">Xóa</a>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

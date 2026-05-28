@@ -42,12 +42,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/login", "/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/admin/**","/roles").hasRole("ADMIN")
+                        .requestMatchers("/admin/products", "/admin/products/**").hasAnyAuthority("ROLE_ADMIN", "Admin_Service")
+                        .requestMatchers("/admin/**", "/roles").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/rooms", true) // Chuyển hướng sau khi đăng nhập thành công
+                        .defaultSuccessUrl("/rooms", true)
                         .permitAll()
                 )
                 // Cấu hình Đăng xuất
@@ -56,11 +57,11 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 )
+                // Cấu hình trang thông báo lỗi phân quyền
                 .exceptionHandling(exception -> exception
                         .accessDeniedPage("/403")
-                );;
+                );
 
         return http.build();
     }
-
 }

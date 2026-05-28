@@ -7,52 +7,104 @@
 
     <div style="max-width: 600px; margin: 0 auto;">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3>Xác nhận thanh toán</h3>
-            <a href="/rooms" class="btn btn-secondary">Quay lại</a>
+            <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt text-primary"></i> Xác nhận thanh toán</h3>
+            <div class="d-flex gap-2">
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
+            </div>
         </div>
 
-        <div class="card-box">
+        <div class="card-box bg-white p-4 rounded shadow-sm">
             <table class="table table-bordered table-striped bg-white">
                 <tr>
-                    <th style="width: 40%;">Khách hàng</th>
-                    <td th:text="${checkIn.customer.fullName}"></td>
+                    <th style="width: 45%;">Khách hàng</th>
+                    <td class="fw-bold text-primary" th:text="${checkIn.customer != null ? checkIn.customer.fullName : 'Khách đã xóa'}"></td>
+                </tr>
+                <tr>
+                    <th>Số CCCD</th>
+                    <td class="fw-bold text-secondary" th:text="${checkIn.customer != null ? checkIn.customer.identityNumber : 'N/A'}"></td>
                 </tr>
                 <tr>
                     <th>Phòng</th>
-                    <td th:text="${checkIn.room.roomName}"></td>
-                </tr>
-                <tr>
-                    <th>Giờ check-in</th>
-                    <td th:text="${#temporals.format(checkIn.checkInTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
-                </tr>
-                <tr>
-                    <th>Giờ check-out</th>
-                    <td th:text="${#temporals.format(checkIn.checkOutTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
-                </tr>
-                <tr>
-                    <th>Tổng giờ sử dụng</th>
-                    <td><span th:text="${#numbers.formatDecimal(checkIn.totalHours,1,2)}"></span> giờ</td>
+                    <td class="fw-bold text-dark" th:text="${checkIn.room != null ? checkIn.room.roomName : 'Phòng đã xóa'}"></td>
                 </tr>
                 <tr>
                     <th>Đơn giá phòng</th>
-                    <td><span th:text="${checkIn.room.price}"></span> VNĐ / giờ</td>
+                    <td><span class="fw-bold" th:text="${#numbers.formatDecimal(checkIn.room.price,1,0)}"></span> VNĐ / giờ</td>
+                </tr>
+                <tr>
+                    <th>Giờ check-in</th>
+                    <td th:text="${#temporals.format(checkIn.checkInTime, 'dd-MM-yyyy HH:mm:ss')}"></td>
+                </tr>
+                <tr>
+                    <th>Giờ check-out</th>
+                    <td th:text="${#temporals.format(checkIn.checkOutTime, 'dd-MM-yyyy HH:mm:ss')}"></td>
+                </tr>
+                <tr>
+                    <th>Thời gian đăng ký sử dụng</th>
+                    <td><span class="fw-bold text-info" th:text="${checkIn.expectedHours != null ? checkIn.expectedHours : 0.0}"></span> giờ</td>
+                </tr>
+                <tr>
+                    <th>Tổng thời gian sử dụng thực tế</th>
+                    <td><span class="fw-bold text-primary" th:text="${#numbers.formatDecimal(checkIn.totalHours,1,2)}"></span> giờ (tối thiểu 1.0 giờ)</td>
+                </tr>
+                <tr th:if="${checkIn.overtimeHours != null && checkIn.overtimeHours > 0}">
+                    <th class="text-danger">Số giờ quá giờ (Overtime)</th>
+                    <td class="text-danger fw-bold"><span th:text="${#numbers.formatDecimal(checkIn.overtimeHours,1,2)}"></span> giờ</td>
+                </tr>
+                <tr th:if="${checkIn.overtimeCharge != null && checkIn.overtimeCharge > 0}" class="table-warning">
+                    <th class="text-danger">Phụ phí quá giờ (1.5x đơn giá)</th>
+                    <td class="text-danger fw-bold"><span th:text="${#numbers.formatDecimal(checkIn.overtimeCharge,1,0)}"></span> VNĐ</td>
                 </tr>
                 <tr class="table-success">
-                    <th>THÀNH TIỀN</th>
+                    <th>TỔNG TIỀN TẠM TÍNH</th>
                     <td>
                         <b class="text-success" style="font-size: 1.2rem;">
-                            <span th:text="${#numbers.formatDecimal(checkIn.totalPrice,1,0)}"></span> VNĐ
+                            <span id="basePriceSpan" th:text="${#numbers.formatDecimal(checkIn.totalPrice,1,0)}"></span> VNĐ
                         </b>
                     </td>
                 </tr>
             </table>
 
-            <form th:action="@{/billing/confirm}" method="post" class="mt-4">
+            <form th:action="@{/billing/confirm}" method="post" class="mt-4 p-3 border rounded bg-light">
                 <input type="hidden" name="id" th:value="${checkIn.id}">
-                <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Xác nhận thanh toán</button>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark">Phụ thu thêm (nếu có)</label>
+                    <div class="input-group">
+                        <input type="number" id="surchargeInput" name="surcharge" value="0" min="0" step="1000" class="form-control" placeholder="Nhập phụ thu (nếu có)...">
+                        <span class="input-group-text">VNĐ</span>
+                    </div>
+                    <small class="text-muted">Ví dụ: Tiền nước uống, đồ ăn nhanh, hoặc dịch vụ phát sinh khác.</small>
+                </div>
+
+                <div class="mb-3 bg-white p-3 border rounded">
+                    <h5 class="m-0 d-flex justify-content-between text-dark">
+                        <span>TỔNG THANH TOÁN:</span>
+                        <span class="text-danger fw-bold" id="finalPriceSpan">
+                            <span th:text="${#numbers.formatDecimal(checkIn.totalPrice,1,0)}"></span> VNĐ
+                        </span>
+                    </h5>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 py-2 fw-bold fs-5 shadow-sm">Xác nhận &amp; Trả phòng</button>
             </form>
         </div>
     </div>
 </div>
+
+<script th:inline="javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        /*[[th:inline="true"]]*/
+        const basePrice = /*[[${checkIn.totalPrice}]]*/ 0;
+        const surchargeInput = document.getElementById("surchargeInput");
+        const finalPriceSpan = document.getElementById("finalPriceSpan");
+
+        surchargeInput.addEventListener("input", function() {
+            let surcharge = parseFloat(surchargeInput.value) || 0;
+            let finalPrice = basePrice + surcharge;
+            finalPriceSpan.textContent = finalPrice.toLocaleString('vi-VN') + " VNĐ";
+        });
+    });
+</script>
 </body>
 </html>

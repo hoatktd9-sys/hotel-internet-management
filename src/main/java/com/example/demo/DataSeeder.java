@@ -38,7 +38,9 @@ public class DataSeeder implements CommandLineRunner {
                 Map.entry("Edit_Room", "Chỉnh sửa phòng"),
                 Map.entry("Delete_Room", "Xóa phòng"),
                 Map.entry("View_Room", "Xem danh sách phòng"),
-                Map.entry("View_History", "Xem danh lịch sử check-in")
+                Map.entry("View_History", "Xem danh lịch sử check-in"),
+                Map.entry("Admin_Service", "Quản lý danh mục và sản phẩm dịch vụ"),
+                Map.entry("Order_Service", "Gọi món và sử dụng dịch vụ")
         );
         Set<Permission> AdminPermissions = new HashSet<>();
         for(Map.Entry<String,String> entry : permissions.entrySet()){

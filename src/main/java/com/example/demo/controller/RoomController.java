@@ -1,25 +1,19 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.Room;
 import com.example.demo.enumtype.RoomStatus;
+import com.example.demo.model.Room;
+import java.util.stream.Collectors;
+import com.example.demo.model.RoomType;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.RoomTypeService;
-import com.example.demo.model.RoomType;
-
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,308 +22,266 @@ import java.util.UUID;
 @Controller
 public class RoomController {
 
-    private final RoomService service;
+    private final RoomService roomService;
     private final RoomTypeService roomTypeService;
 
-    public RoomController(RoomService service, RoomTypeService roomTypeService) {
-        this.service = service;
+    public RoomController(
+            RoomService roomService,
+            RoomTypeService roomTypeService) {
+        this.roomService = roomService;
         this.roomTypeService = roomTypeService;
     }
 
+    // ===== HOME =====
     @PreAuthorize("hasAuthority('View_Room')")
     @GetMapping("/")
     public String home() {
         return "redirect:/rooms";
     }
 
-    // ===== LIST =====
+    // ===== DANH SÁCH PHÒNG =====
     @GetMapping("/rooms")
     public String list(Model model) {
-
-        model.addAttribute(
-                "list",
-                service.findAll()
-        );
-
+        model.addAttribute("list", roomService.findAll());
         return "list";
     }
 
+    // ===== FORM THÊM PHÒNG =====
     @PreAuthorize("hasAuthority('Create_Room')")
-    @GetMapping("/create")
+    @GetMapping("rooms/create")
     public String create(Model model) {
-
-        model.addAttribute(
-                "room",
-                new Room()
-        );
+        Room room = new Room();
+        model.addAttribute("room", room);
         model.addAttribute("roomTypes", roomTypeService.findAll());
-
+        model.addAttribute("isEdit", false);
         return "create";
     }
 
-    // ===== SAVE =====
-  @PreAuthorize("hasAuthority('Create_Room')")
+    // ===== LƯU PHÒNG (TẠO MỚI) =====
+    @PreAuthorize("hasAuthority('Create_Room')")
     @PostMapping("/save")
     public String save(
-            @Valid @ModelAttribute("room")
-            Room room,
+            @Valid @ModelAttribute("room") Room room,
             BindingResult result,
+            @RequestParam(value = "roomType", required = false) String roomTypeParam,
+            @RequestParam(value = "roomType.id", required = false) Long roomTypeIdParam,
             @RequestParam("imageFile") MultipartFile imageFile,
-            Model model
-    ) throws IOException {
+            Model model) throws IOException {
 
-        if (service.existsByRoomName(room.getRoomName())) {
-            result.rejectValue("roomName", "error.room", "Tên phòng đã tồn tại");
+        Long typeId = null;
+        if (room.getRoomType() != null && room.getRoomType().getId() != null) {
+            typeId = room.getRoomType().getId();
+        } else if (roomTypeIdParam != null) {
+            typeId = roomTypeIdParam;
+        } else if (roomTypeParam != null && !roomTypeParam.trim().isEmpty()) {
+            try {
+                typeId = Long.parseLong(roomTypeParam.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        if (typeId == null) {
+            result.rejectValue("roomType", "error.roomType", "Vui lòng chọn loại phòng hợp lệ.");
         }
 
         if (result.hasErrors()) {
-            System.out.println("Validation errors: " + result.getAllErrors());
+            System.out.println("===== VALIDATION ERROR (SAVE) =====");
+            result.getAllErrors().forEach(error -> System.out.println(error.getDefaultMessage()));
+
             model.addAttribute("roomTypes", roomTypeService.findAll());
+            model.addAttribute("isEdit", false);
             return "create";
         }
 
-        try {
-            if (!imageFile.isEmpty()) {
-                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-                Path uploadPath = Paths.get("src/main/resources/static/images");
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
-                Files.copy(imageFile.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-                room.setImage("/images/" + fileName);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        RoomType managedRoomType = roomTypeService.findById(typeId);
+        if (managedRoomType == null) {
+            result.rejectValue("roomType", "error.roomType", "Loại phòng không tồn tại trên hệ thống.");
+            model.addAttribute("roomTypes", roomTypeService.findAll());
+            model.addAttribute("isEdit", false);
+            return "create";
         }
+        room.setRoomType(managedRoomType);
 
-        // ===== UPLOAD ẢNH =====
-
+        // =========================================================================
+        // CHUẨN HÓA LOGIC LƯU ẢNH: TRỎ VÀO THƯ MỤC UPLOADS/IMAGES VÀ LƯU FILE TINH GỌN
+        // =========================================================================
         if (!imageFile.isEmpty()) {
-
-            // thư mục uploads
-            String uploadDir =
-                    new File("uploads").getAbsolutePath();
-
+            String uploadDir = new File("uploads/images").getAbsolutePath(); // Sửa từ "uploads" -> "uploads/images"
             File dir = new File(uploadDir);
-
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-
-            // đổi tên file tránh trùng
-            String fileName =
-                    UUID.randomUUID()
-                            + "_"
-                            + imageFile.getOriginalFilename();
-
-            // lưu file
-            File saveFile =
-                    new File(uploadDir, fileName);
-
+            String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+            File saveFile = new File(dir, fileName);
             imageFile.transferTo(saveFile);
-
-            // lưu tên file vào DB
-            room.setImage(fileName);
+            room.setImage(fileName); // Chỉ lưu tên file tinh gọn dưới DB
         }
 
-        // mặc định AVAILABLE
-        if (room.getStatus() == null) {
-            room.setStatus(RoomStatus.AVAILABLE);
-        }
-        // mặc định phòng mới là AVAILABLE
         room.setStatus(RoomStatus.AVAILABLE);
+        roomService.save(room);
 
-        service.save(room);
-
-        model.addAttribute(
-                "success",
-                "Thêm phòng thành công!"
-        );
-
-        model.addAttribute(
-                "room",
-                new Room()
-        );
-        model.addAttribute("roomTypes", roomTypeService.findAll());
-
-        return "create";
+        return "redirect:/rooms";
     }
 
-    @PreAuthorize("hasAuthority('Edit_Room')")
+    // ===== FORM UPDATE =====
     @GetMapping("/edit/{id}")
-    public String edit(
-            @PathVariable Long id,
-            Model model
-    ) {
-
-        model.addAttribute(
-                "room",
-                service.findById(id)
-        );
-
-        model.addAttribute(
-                "isEdit",
-                true
-        );
+    public String edit(@PathVariable Long id, Model model) {
+        model.addAttribute("room", roomService.findById(id));
         model.addAttribute("roomTypes", roomTypeService.findAll());
-
+        model.addAttribute("isEdit", true);
         return "create";
     }
 
-  @PreAuthorize("hasAuthority('Edit_Room')")
-    @PostMapping("/update")
+    // ===== CẬP NHẬT PHÒNG =====
+    @PreAuthorize("hasAuthority('Edit_Room')")
+    @PostMapping("/update/{id}")
     public String update(
-
-            @Valid @ModelAttribute("room")
-            Room room,
+            @PathVariable Long id,
+            @Valid @ModelAttribute("room") Room room,
             BindingResult result,
+            @RequestParam(value = "roomType", required = false) String roomTypeParam,
+            @RequestParam(value = "roomType.id", required = false) Long roomTypeIdParam,
             @RequestParam("imageFile") MultipartFile imageFile,
-            Model model
-    ) throws IOException {
+            Model model) throws IOException {
 
-        Room oldRoom = service.findById(room.getId());
-        if (!oldRoom.getRoomName().equals(room.getRoomName()) && service.existsByRoomName(room.getRoomName())) {
-            result.rejectValue("roomName", "error.room", "Tên phòng đã tồn tại");
+        Long typeId = null;
+        if (room.getRoomType() != null && room.getRoomType().getId() != null) {
+            typeId = room.getRoomType().getId();
+        } else if (roomTypeIdParam != null) {
+            typeId = roomTypeIdParam;
+        } else if (roomTypeParam != null && !roomTypeParam.trim().isEmpty()) {
+            try {
+                typeId = Long.parseLong(roomTypeParam.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        if (typeId == null) {
+            result.rejectValue("roomType", "error.roomType", "Vui lòng chọn loại phòng.");
         }
 
         if (result.hasErrors()) {
+            System.out.println("===== VALIDATION ERROR (UPDATE) =====");
+            result.getAllErrors().forEach(error -> System.out.println(error.getDefaultMessage()));
 
-            model.addAttribute(
-                    "isEdit",
-                    true
-            );
             model.addAttribute("roomTypes", roomTypeService.findAll());
-
+            model.addAttribute("isEdit", true);
+            room.setId(id);
             return "create";
         }
 
+        RoomType managedRoomType = roomTypeService.findById(typeId);
+        if (managedRoomType == null) {
+            result.rejectValue("roomType", "error.roomType", "Loại phòng không tồn tại trên hệ thống.");
+            model.addAttribute("roomTypes", roomTypeService.findAll());
+            model.addAttribute("isEdit", true);
+            return "create";
+        }
+        room.setRoomType(managedRoomType);
+
+        room.setId(id);
+        Room oldRoom = roomService.findById(id);
         room.setStatus(oldRoom.getStatus());
 
-        try {
-            if (!imageFile.isEmpty()) {
-                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-                Path uploadPath = Paths.get("uploads/images");
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
-                Files.copy(imageFile.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-                room.setImage("/images/" + fileName);
-            } else {
-                room.setImage(oldRoom.getImage());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // ===== UPDATE ẢNH =====
-
+        // =========================================================================
+        // CHUẨN HÓA LOGIC CẬP NHẬT ẢNH: TRỎ VÀO THƯ MỤC UPLOADS/IMAGES KHI SỬA PHÒNG
+        // =========================================================================
         if (!imageFile.isEmpty()) {
-
-            String uploadDir =
-                    new File("uploads").getAbsolutePath();
-
+            String uploadDir = new File("uploads/images").getAbsolutePath(); // Sửa từ "uploads" -> "uploads/images"
             File dir = new File(uploadDir);
-
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-
-            String fileName =
-                    UUID.randomUUID()
-                            + "_"
-                            + imageFile.getOriginalFilename();
-
-            File saveFile =
-                    new File(uploadDir, fileName);
-
+            String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+            File saveFile = new File(dir, fileName);
             imageFile.transferTo(saveFile);
-
             room.setImage(fileName);
-
         } else {
-
-            // giữ ảnh cũ
             room.setImage(oldRoom.getImage());
         }
 
-        service.save(room);
-
+        roomService.save(room);
         return "redirect:/rooms";
     }
 
-
-    @PreAuthorize("hasAuthority('Detele_Room')")
+    // ===== XÓA =====
+    @PreAuthorize("hasAuthority('Delete_Room')")
     @GetMapping("/room/delete/{id}")
-    public String deleteRoom(
-            @PathVariable Long id,
-            Model model
-    ) {
+    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            service.delete(id);
+            roomService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Xóa phòng thành công!");
         } catch (Exception e) {
-            model.addAttribute("error", "Không thể xóa phòng vì có lịch sử check-in liên quan!");
-            model.addAttribute("list", service.findAll());
-            return "list";
+            System.err.println("===== LỖI LOGIC HOẶC RÀNG BUỘC KHI XÓA PHÒNG =====");
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/rooms";
     }
 
-    // ===== SEARCH =====
+    // ===== CHI TIẾT PHÒNG =====
+    @GetMapping("/room/detail/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        model.addAttribute("room", roomService.findById(id));
+        return "detail";
+    }
+
+    // ===== SEARCH THEO GIÁ =====
     @GetMapping("/search")
-    public String search(
-            @RequestParam(required = false)
-            Double price,
+    public String search(@RequestParam(required = false) Double price, Model model) {
+        model.addAttribute("list", roomService.search(price));
+        model.addAttribute("price", price);
+        return "list";
+    }
 
-            Model model
-    ) {
+    // ===== LỌC THEO TRẠNG THÁI =====
+    @GetMapping("/status/{status}")
+    public String filterByStatus(@PathVariable RoomStatus status, Model model) {
+        model.addAttribute("list", roomService.findByStatus(status));
+        model.addAttribute("selectedStatus", status);
+        return "list";
+    }
 
-        model.addAttribute(
-                "list",
-                service.search(price)
-        );
+    // ===== CHUYỂN TRẠNG THÁI =====
+    @GetMapping("/change-status/{id}/{status}")
+    public String changeStatus(@PathVariable Long id, @PathVariable RoomStatus status) {
+        roomService.updateStatus(id, status);
+        return "redirect:/rooms";
+    }
 
-        model.addAttribute(
-                "price",
-                price
-        );
+    // ===== HOÀN TẤT DỌN DẸP =====
+    @GetMapping("/room/available/{id}")
+    public String makeRoomAvailable(@PathVariable Long id) {
+        roomService.updateStatus(id, RoomStatus.AVAILABLE);
+        return "redirect:/rooms";
+    }
+
+    // ===== SEARCH NÂNG CAO =====
+    @GetMapping("/rooms/search")
+    public String searchRooms(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) RoomStatus status,
+            @RequestParam(required = false) String roomType,
+            Model model) {
+        if (keyword != null && keyword.trim().isEmpty()) {
+            keyword = null;
+        }
+        if (roomType != null && roomType.trim().isEmpty()) {
+            roomType = null;
+        }
+
+        model.addAttribute("list", roomService.searchRooms(keyword, status, roomType));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedRoomType", roomType);
 
         return "list";
     }
 
-    // ===== HOÀN TẤT DỌN DẸP =====
-    @GetMapping("/room/complete-cleaning/{id}")
-    public String completeCleaning(
-            @PathVariable Long id
-    ) {
-
-        // tìm phòng
-        Room room = service.findById(id);
-
-        // đổi trạng thái
-        room.setStatus(RoomStatus.AVAILABLE);
-
-        // lưu
-        service.save(room);
-
-        return "redirect:/rooms";
+    @ModelAttribute
+    public void addCommonAttributes(Model model) {
+        model.addAttribute("availableRooms", roomService.getAll().stream()
+                .filter(r -> r.getStatus() != null && r.getStatus() == RoomStatus.AVAILABLE)
+                .collect(Collectors.toList()));
     }
-
-    // ===== HOÀN TẤT DỌN DẸP (API MỚI) =====
-    @GetMapping("/room/available/{id}")
-    public String makeRoomAvailable(
-            @PathVariable Long id
-    ) {
-
-        // tìm phòng
-        Room room = service.findById(id);
-
-        // chuyển sang AVAILABLE
-        room.setStatus(RoomStatus.AVAILABLE);
-
-        // lưu
-        service.save(room);
-
-        return "redirect:/rooms";
-    }
-
 }

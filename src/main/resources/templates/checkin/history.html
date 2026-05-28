@@ -1,89 +1,84 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Lịch sử sử dụng phòng')}"></head>
+<head th:replace="~{fragments/layout :: head('Lịch sử thuê phòng - Gaming Hotel')}"></head>
 <body>
-<div class="container">
-    <div th:replace="~{fragments/layout :: navbar('Lịch sử sử dụng phòng')}"></div>
+<div class="container-fluid">
+    <div th:replace="~{fragments/layout :: navbar('Lịch sử thuê phòng')}"></div>
 
-    <div class="card-box">
+    <div class="card-box mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-2 rounded">
+            <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-text text-primary"></i> Nhật ký &amp; Lịch sử sử dụng phòng</h3>
+            <div class="d-flex gap-2">
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
+            </div>
+        </div>
 
-    <table class="table table-bordered table-hover bg-white">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover align-middle bg-white mb-0">
+                <thead class="table-dark">
+                <tr>
+                    <th style="width: 80px;">Mã phiếu</th>
+                    <th>Khách hàng</th>
+                    <th>Số CCCD</th>
+                    <th>Phòng máy / Nghỉ</th>
+                    <th>Giờ nhận phòng</th>
+                    <th>Giờ trả phòng</th>
+                    <th>Số giờ đã dùng</th>
+                    <th>Trạng thái</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${list}">
+                    <!-- ID -->
+                    <td class="fw-bold text-center" th:text="${c.id}"></td>
 
-        <thead class="table-dark">
+                    <!-- KHÁCH HÀNG -->
+                    <td class="fw-bold text-primary">
+                        <span th:text="${c.customer != null ? c.customer.fullName : 'Khách đã xóa'}"></span>
+                    </td>
 
-        <tr>
+                    <!-- SỐ CCCD -->
+                    <td class="fw-bold text-secondary">
+                        <span th:text="${c.customer != null ? c.customer.identityNumber : 'N/A'}"></span>
+                    </td>
 
-            <th>ID</th>
+                    <!-- PHÒNG MÁY -->
+                    <td class="fw-bold text-dark">
+                        <span th:text="${c.room != null ? c.room.roomName : 'Phòng đã xóa'}"></span>
+                    </td>
 
-            <th>Khách hàng</th>
+                    <!-- CHECKIN TIME -->
+                    <td th:text="${#temporals.format(c.checkInTime, 'dd-MM-yyyy HH:mm:ss')}"></td>
 
-            <th>Phòng</th>
+                    <!-- CHECKOUT TIME -->
+                    <td>
+                        <span th:if="${c.checkOutTime != null}" th:text="${#temporals.format(c.checkOutTime, 'dd-MM-yyyy HH:mm:ss')}"></span>
+                        <span th:if="${c.checkOutTime == null}" class="badge bg-warning text-dark"><i class="bi bi-play-circle"></i> Đang hoạt động</span>
+                    </td>
 
-            <th>Check-in</th>
+                    <!-- TỔNG GIỜ -->
+                    <td class="text-center fw-bold">
+                        <span th:if="${c.totalHours != null}" th:text="${#numbers.formatDecimal(c.totalHours,1,2)} + ' giờ'"></span>
+                        <span th:if="${c.totalHours == null}">---</span>
+                    </td>
 
-            <th>Check-out</th>
-
-            <th>Tổng giờ</th>
-
-        </tr>
-
-        </thead>
-
-        <tbody>
-
-        <tr th:each="c : ${list}">
-
-            <!-- ID -->
-
-            <td th:text="${c.id}"></td>
-
-            <!-- KHÁCH -->
-
-            <td th:text="${c.customer.fullName}"></td>
-
-            <!-- PHÒNG -->
-
-            <td th:text="${c.room.roomName}"></td>
-
-            <!-- CHECKIN -->
-
-            <td th:text="${#temporals.format(c.checkInTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
-
-            <!-- CHECKOUT -->
-
-            <td>
-
-                <span th:if="${c.checkOutTime != null}"
-                      th:text="${#temporals.format(c.checkOutTime, 'yyyy-MM-dd HH:mm:ss')}">
-                </span>
-
-                <span th:if="${c.checkOutTime == null}">
-                    Đang sử dụng
-                </span>
-
-            </td>
-
-            <!-- TỔNG GIỜ -->
-
-            <td>
-
-                <span th:if="${c.totalHours != null}"
-                      th:text="${#numbers.formatDecimal(c.totalHours,1,2)}">
-                </span>
-
-                <span th:if="${c.totalHours == null}">
-                    ---
-                </span>
-
-            </td>
-
-        </tr>
-
-        </tbody>
-
-    </table>
+                    <!-- TRẠNG THÁI STATUS BADGE -->
+                    <td>
+                        <span th:if="${c.status == 'ACTIVE'}" class="badge bg-primary px-3 py-2">Đang sử dụng</span>
+                        <span th:if="${c.status == 'RESERVED'}" class="badge bg-warning text-dark px-3 py-2">Đã đặt trước</span>
+                        <span th:if="${c.status == 'COMPLETED'}" class="badge bg-success px-3 py-2">Đã thanh toán</span>
+                        <span th:if="${c.status == 'CANCELLED'}" class="badge bg-danger px-3 py-2">Đã hủy bỏ</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(list)}">
+                    <td colspan="8" class="text-center text-muted py-4"><i class="bi bi-folder-x" style="font-size: 2rem;"></i><br>Chưa có dữ liệu lịch sử phiếu thuê nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
 
 </body>
 </html>

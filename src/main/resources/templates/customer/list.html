@@ -1,23 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý khách hàng</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #f4f6f9; padding: 30px; }
-        .card-custom { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-        .badge-vip { background-color: #ffd700; color: #000; font-weight: bold; }
-    </style>
-</head>
+<head th:replace="~{fragments/layout :: head('Quản lý khách hàng - Gaming Hotel')}"></head>
 <body>
-<div class="container">
-    <div class="card-custom">
+<div class="container-fluid">
+    <!-- UNIFIED NAVBAR -->
+    <div th:replace="~{fragments/layout :: navbar('Quản lý khách hàng')}"></div>
+
+    <div class="card-box mt-4 bg-white p-4 rounded shadow-sm">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Quản lý dữ liệu khách hàng</h2>
+            <h2 class="fw-bold mb-0 text-dark"><i class="bi bi-person-lines-fill text-primary"></i> Quản lý dữ liệu khách hàng</h2>
             <div class="d-flex gap-2">
-                <a href="/customers/create" class="btn btn-success" sec:authorize="hasAuthority('Create_Customer')">+ Thêm khách hàng mới</a>
-                <a href="/rooms" class="btn btn-secondary">← Quay lại danh sách phòng</a>
+                <a href="/customers/create" class="btn btn-success fw-bold" sec:authorize="hasAuthority('Create_Customer')"><i class="bi bi-plus-circle"></i> Thêm khách hàng mới</a>
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
             </div>
         </div>
 
@@ -26,58 +20,60 @@
                 <input type="text" name="keyword" th:value="${keyword}" class="form-control" placeholder="Tìm theo họ tên, số điện thoại hoặc số CCCD...">
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+                <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="bi bi-search"></i> Tìm kiếm</button>
             </div>
         </form>
 
         <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle">
+            <table class="table table-bordered table-striped table-hover align-middle bg-white mb-0">
                 <thead class="table-dark">
                 <tr>
-                    <th>ID</th>
+                    <th style="width: 80px;">ID</th>
                     <th>Họ và tên</th>
-                    <th>Số CCCD</th>
+                    <th>Số CCCD / Passport</th>
                     <th>Số điện thoại</th>
-                    <th>Hạng khách hàng</th>
+                    <th>Hạng khách</th>
                     <th>Trạng thái</th>
-                    <th>Thao tác nhanh</th>
+                    <th>Thao tác quản trị</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="c : ${list}">
-                    <td th:text="${c.id}"></td>
-                    <td><span th:text="${c.fullName}" class="fw-bold"></span></td>
-                    <td th:text="${c.identityNumber}"></td>
+                    <td class="text-center fw-bold" th:text="${c.id}"></td>
+                    <td><span th:text="${c.fullName}" class="fw-bold text-dark"></span></td>
+                    <td class="fw-bold text-secondary" th:text="${c.identityNumber}"></td>
                     <td th:text="${c.phoneNumber}"></td>
                     <td>
-                        <span th:if="${c.vip}" class="badge badge-vip text-dark">⭐ VIP</span>
-                        <span th:unless="${c.vip}" class="badge bg-light text-dark">Thường</span>
+                        <span th:if="${c.vip}" class="badge bg-warning text-dark fw-bold"><i class="bi bi-star-fill"></i> ⭐ VIP</span>
+                        <span th:unless="${c.vip}" class="badge bg-light text-dark border">Thường</span>
                     </td>
                     <td>
                         <span th:if="${c.isActive}" class="badge bg-success">Đang hoạt động</span>
-                        <span th:unless="${c.isActive}" class="badge bg-danger">Đang bị khóa</span>
+                        <span th:unless="${c.isActive}" class="badge bg-danger">Đang khóa</span>
                     </td>
                     <td>
                         <div class="d-flex gap-2">
-                            <a th:href="@{/customers/edit/{id}(id=${c.id})}" class="btn btn-primary btn-sm" sec:authorize="hasAuthority('Edit_Customer')">Sửa</a>
+                            <a th:href="@{/customers/edit/{id}(id=${c.id})}" class="btn btn-primary btn-sm fw-bold" sec:authorize="hasAuthority('Edit_Customer')"><i class="bi bi-pencil-square"></i> Sửa</a>
 
                             <a th:href="@{/customers/toggle-vip/{id}(id=${c.id})}"
-                               th:class="${c.vip} ? 'btn btn-outline-warning btn-sm' : 'btn btn-warning btn-sm'"
+                               th:class="${c.vip} ? 'btn btn-outline-warning btn-sm fw-bold' : 'btn btn-warning btn-sm fw-bold text-dark'"
                                th:text="${c.vip} ? 'Hủy VIP' : 'Kích VIP'"></a>
 
                             <a th:href="@{/customers/toggle-active/{id}(id=${c.id})}"
-                               th:class="${c.isActive} ? 'btn btn-outline-danger btn-sm' : 'btn btn-success btn-sm'"
-                               th:text="${c.isActive} ? 'Khóa máy' : 'Mở khóa'"></a>
+                               th:class="${c.isActive} ? 'btn btn-outline-danger btn-sm fw-bold' : 'btn btn-success btn-sm fw-bold'"
+                               th:text="${c.isActive} ? 'Khóa' : 'Kích hoạt'"></a>
                         </div>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(list)}">
-                    <td colspan="7" class="text-center text-muted py-3">Không có thông tin khách hàng nào phù hợp!</td>
+                    <td colspan="7" class="text-center text-muted py-4"><i class="bi bi-folder-x" style="font-size: 2rem;"></i><br>Không tìm thấy khách hàng nào phù hợp!</td>
                 </tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+
 </body>
 </html>

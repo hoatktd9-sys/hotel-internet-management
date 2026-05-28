@@ -57,8 +57,14 @@ public class RoomTypeController {
     }
 
     @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
-        service.delete(id);
+    public String delete(@PathVariable Long id, Model model) {
+        try {
+            service.delete(id);
+        } catch (Exception e) {
+            model.addAttribute("error", "Không thể xóa loại phòng vì đang có phòng thuộc loại này!");
+            model.addAttribute("list", service.findAll());
+            return "/admin/room-type/list";
+        }
         return "redirect:/admin/room-types";
     }
 }

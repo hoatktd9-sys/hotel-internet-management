@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.model.Room;
+import java.util.stream.Collectors;
 import com.example.demo.model.RoomType;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.RoomTypeService;
@@ -26,8 +27,7 @@ public class RoomController {
 
     public RoomController(
             RoomService roomService,
-            RoomTypeService roomTypeService
-    ) {
+            RoomTypeService roomTypeService) {
         this.roomService = roomService;
         this.roomTypeService = roomTypeService;
     }
@@ -48,7 +48,7 @@ public class RoomController {
 
     // ===== FORM THÊM PHÒNG =====
     @PreAuthorize("hasAuthority('Create_Room')")
-    @GetMapping("/create")
+    @GetMapping("rooms/create")
     public String create(Model model) {
         Room room = new Room();
         model.addAttribute("room", room);
@@ -66,8 +66,7 @@ public class RoomController {
             @RequestParam(value = "roomType", required = false) String roomTypeParam,
             @RequestParam(value = "roomType.id", required = false) Long roomTypeIdParam,
             @RequestParam("imageFile") MultipartFile imageFile,
-            Model model
-    ) throws IOException {
+            Model model) throws IOException {
 
         Long typeId = null;
         if (room.getRoomType() != null && room.getRoomType().getId() != null) {
@@ -77,7 +76,8 @@ public class RoomController {
         } else if (roomTypeParam != null && !roomTypeParam.trim().isEmpty()) {
             try {
                 typeId = Long.parseLong(roomTypeParam.trim());
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         if (typeId == null) {
@@ -142,8 +142,7 @@ public class RoomController {
             @RequestParam(value = "roomType", required = false) String roomTypeParam,
             @RequestParam(value = "roomType.id", required = false) Long roomTypeIdParam,
             @RequestParam("imageFile") MultipartFile imageFile,
-            Model model
-    ) throws IOException {
+            Model model) throws IOException {
 
         Long typeId = null;
         if (room.getRoomType() != null && room.getRoomType().getId() != null) {
@@ -153,7 +152,8 @@ public class RoomController {
         } else if (roomTypeParam != null && !roomTypeParam.trim().isEmpty()) {
             try {
                 typeId = Long.parseLong(roomTypeParam.trim());
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         if (typeId == null) {
@@ -262,8 +262,7 @@ public class RoomController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) RoomStatus status,
             @RequestParam(required = false) String roomType,
-            Model model
-    ) {
+            Model model) {
         if (keyword != null && keyword.trim().isEmpty()) {
             keyword = null;
         }
@@ -277,5 +276,12 @@ public class RoomController {
         model.addAttribute("selectedRoomType", roomType);
 
         return "list";
+    }
+
+    @ModelAttribute
+    public void addCommonAttributes(Model model) {
+        model.addAttribute("availableRooms", roomService.getAll().stream()
+                .filter(r -> r.getStatus() != null && r.getStatus() == RoomStatus.AVAILABLE)
+                .collect(Collectors.toList()));
     }
 }

@@ -77,6 +77,28 @@ public class Room {
     @OneToMany(mappedBy = "room")
     private List<CheckIn> checkIns = new ArrayList<>();
 
+    @Transient
+    public CheckIn getActiveCheckIn() {
+        if (checkIns == null) return null;
+        for (CheckIn c : checkIns) {
+            if ("ACTIVE".equals(c.getStatus())) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    @Transient
+    public CheckIn getReservedCheckIn() {
+        if (checkIns == null) return null;
+        for (CheckIn c : checkIns) {
+            if ("RESERVED".equals(c.getStatus())) {
+                return c;
+            }
+        }
+        return null;
+    }
+
     // ================= CONSTRUCTOR =================
 
     public Room() {

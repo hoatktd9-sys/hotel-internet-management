@@ -40,6 +40,18 @@ public class CheckIn {
 
     private Double totalPrice;
 
+    // ===== RENTAL VOUCHER STATUS & EXTRA INFO =====
+
+    private String status = "ACTIVE"; // ACTIVE, RESERVED, COMPLETED, CANCELLED
+
+    private Double expectedHours = 0.0;
+
+    private Double overtimeHours = 0.0;
+
+    private Double overtimeCharge = 0.0;
+
+    private Double surcharge = 0.0;
+
     // ===== GETTER SETTER =====
 
     public Long getId() {
@@ -96,5 +108,45 @@ public class CheckIn {
 
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Double getExpectedHours() {
+        return expectedHours;
+    }
+
+    public void setExpectedHours(Double expectedHours) {
+        this.expectedHours = expectedHours;
+    }
+
+    public Double getOvertimeHours() {
+        return overtimeHours;
+    }
+
+    public void setOvertimeHours(Double overtimeHours) {
+        this.overtimeHours = overtimeHours;
+    }
+
+    public Double getOvertimeCharge() {
+        return overtimeCharge;
+    }
+
+    public void setOvertimeCharge(Double overtimeCharge) {
+        this.overtimeCharge = overtimeCharge;
+    }
+
+    public Double getSurcharge() {
+        return surcharge;
+    }
+
+    public void setSurcharge(Double surcharge) {
+        this.surcharge = surcharge;
     }
 }

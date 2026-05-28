@@ -17,4 +17,10 @@ public interface CheckInRepository
 
     // ===== LỊCH SỬ PHÒNG =====
     List<CheckIn> findByRoomId(Long roomId);
+
+    // ===== TÌM THEO STATUS =====
+    List<CheckIn> findByStatus(String status);
+
+    // ===== TÌM THEO PHÒNG VÀ STATUS =====
+    Optional<CheckIn> findByRoomIdAndStatus(Long roomId, String status);
 }

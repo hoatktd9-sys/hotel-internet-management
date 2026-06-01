@@ -1,47 +1,107 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Quản lý khách hàng')}"></head>
+<head th:replace="~{fragments/layout :: head(${isEdit} ? 'Cập nhật khách hàng' : 'Thêm khách hàng mới')}"></head>
 <body>
-<div class="container">
-    <div th:replace="~{fragments/layout :: navbar('Quản lý khách hàng')}"></div>
+<div class="container-fluid">
+    <!-- UNIFIED NAVBAR -->
+    <div th:replace="~{fragments/layout :: navbar('Đăng ký khách hàng')}"></div>
 
-    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-    <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
-        <p th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
-    </div>
-
-    <div style="max-width: 600px; margin: 0 auto;">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 th:text="${isEdit} ? 'Sửa khách hàng' : 'Thêm khách hàng'"></h3>
-            <a href="/customers" class="btn btn-secondary">Quay lại</a>
+    <div style="max-width: 650px; margin: 0 auto;" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+            <h3 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-person-fill-add text-success"></i> 
+                <span th:text="${isEdit} ? 'Cập nhật thông tin khách hàng' : 'Đăng ký khách hàng mới'">Thêm khách hàng</span>
+            </h3>
+            <div class="d-flex gap-2">
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Trang chủ</a>
+                <a href="/customers" class="btn btn-info text-white fw-bold"><i class="bi bi-person-lines-fill"></i> Danh sách khách</a>
+            </div>
         </div>
 
-        <div class="card-box">
-        <form th:action="${isEdit} ? '/customers/update' : '/customers/save'" th:object="${customer}" method="post">
-            <input type="hidden" th:field="*{id}">
-            
-            <div class="mb-3">
-                <label class="form-label">Họ tên</label>
-                <input type="text" class="form-control" th:field="*{fullName}">
-                <div class="text-danger" th:errors="*{fullName}"></div>
-            </div>
+        <div class="card-box bg-white p-4 rounded shadow-sm">
+            <!-- EDIT FORM -->
+            <form th:if="${isEdit}" th:action="@{/customers/update}" th:object="${customer}" method="post">
+                <input type="hidden" th:field="*{id}">
+                <input type="hidden" th:field="*{vip}">
+                <input type="hidden" th:field="*{active}">
 
-            <div class="mb-3">
-                <label class="form-label">CCCD / Passport</label>
-                <input type="text" class="form-control" th:field="*{identityNumber}">
-                <div class="text-danger" th:errors="*{identityNumber}"></div>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Họ và tên khách hàng</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                        <input type="text" class="form-control" th:field="*{fullName}" placeholder="Nhập họ và tên..." required>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label">Số điện thoại</label>
-                <input type="text" class="form-control" th:field="*{phoneNumber}">
-                <div class="text-danger" th:errors="*{phoneNumber}"></div>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Số CCCD / Passport (Bất biến)</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-card-image"></i></span>
+                        <input type="text" class="form-control" th:field="*{identityNumber}"
+                               placeholder="Nhập số căn cước công dân..." required readonly>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('identityNumber')}" th:errors="*{identityNumber}"></div>
+                </div>
 
-            <button type="submit" class="btn btn-success" th:text="${isEdit} ? 'Cập nhật' : 'Lưu khách hàng'"></button>
-        </form>
-    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Số điện thoại liên lạc</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone-fill"></i></span>
+                        <input type="text" class="form-control" th:field="*{phoneNumber}" placeholder="Nhập số điện thoại..." required>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}"></div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end mt-4">
+                    <a href="/customers" class="btn btn-secondary fw-bold">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-success px-4 fw-bold"><i class="bi bi-save-fill"></i> Lưu cập nhật</button>
+                </div>
+            </form>
+
+            <!-- CREATE FORM -->
+            <form th:unless="${isEdit}" th:action="@{/customers/save}" th:object="${customer}" method="post">
+                <input type="hidden" th:field="*{id}">
+                <input type="hidden" th:field="*{vip}">
+                <input type="hidden" th:field="*{active}">
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Họ và tên khách hàng</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                        <input type="text" class="form-control" th:field="*{fullName}" placeholder="Nhập họ và tên..." required>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Số CCCD / Passport</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-card-image"></i></span>
+                        <input type="text" class="form-control" th:field="*{identityNumber}"
+                               placeholder="Nhập số căn cước công dân..." required>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('identityNumber')}" th:errors="*{identityNumber}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Số điện thoại liên lạc</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone-fill"></i></span>
+                        <input type="text" class="form-control" th:field="*{phoneNumber}" placeholder="Nhập số điện thoại..." required>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}"></div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end mt-4">
+                    <a href="/customers" class="btn btn-secondary fw-bold">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-success px-4 fw-bold"><i class="bi bi-check-circle-fill"></i> Đăng ký khách</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+
 </body>
 </html>

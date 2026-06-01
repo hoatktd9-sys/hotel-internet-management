@@ -12,27 +12,45 @@ public class CheckIn {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== KHÁCH =====
+    // ===== CUSTOMER =====
+
     @ManyToOne
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
-    // ===== PHÒNG =====
+    // ===== ROOM =====
+
     @ManyToOne
     @JoinColumn(name = "room_id")
     private Room room;
 
-    // ===== THỜI GIAN CHECK-IN =====
+    // ===== CHECK-IN =====
+
     private LocalDateTime checkInTime;
 
-    // ===== THỜI GIAN CHECK-OUT =====
+    // ===== CHECK-OUT =====
+
     private LocalDateTime checkOutTime;
 
-    // ===== TỔNG SỐ GIỜ =====
+    // ===== TOTAL HOURS =====
+
     private Double totalHours;
 
-    // ===== TỔNG TIỀN (MỚI THÊM) =====
+    // ===== TOTAL PRICE =====
+
     private Double totalPrice;
+
+    // ===== RENTAL VOUCHER STATUS & EXTRA INFO =====
+
+    private String status = "ACTIVE"; // ACTIVE, RESERVED, COMPLETED, CANCELLED
+
+    private Double expectedHours = 0.0;
+
+    private Double overtimeHours = 0.0;
+
+    private Double overtimeCharge = 0.0;
+
+    private Double surcharge = 0.0;
 
     // ===== GETTER SETTER =====
 
@@ -84,13 +102,51 @@ public class CheckIn {
         this.totalHours = totalHours;
     }
 
-    // GETTER CHO TỔNG TIỀN
     public Double getTotalPrice() {
         return totalPrice;
     }
 
-    // SETTER CHO TỔNG TIỀN
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Double getExpectedHours() {
+        return expectedHours;
+    }
+
+    public void setExpectedHours(Double expectedHours) {
+        this.expectedHours = expectedHours;
+    }
+
+    public Double getOvertimeHours() {
+        return overtimeHours;
+    }
+
+    public void setOvertimeHours(Double overtimeHours) {
+        this.overtimeHours = overtimeHours;
+    }
+
+    public Double getOvertimeCharge() {
+        return overtimeCharge;
+    }
+
+    public void setOvertimeCharge(Double overtimeCharge) {
+        this.overtimeCharge = overtimeCharge;
+    }
+
+    public Double getSurcharge() {
+        return surcharge;
+    }
+
+    public void setSurcharge(Double surcharge) {
+        this.surcharge = surcharge;
     }
 }

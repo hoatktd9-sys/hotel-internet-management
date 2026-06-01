@@ -4,9 +4,9 @@ import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.PermissionRepository;
 import com.example.demo.repository.RoleRepository;
-import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.LoginHistoryRepository;
 import com.example.demo.service.UserService;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,26 +20,22 @@ import java.util.Set;
 @Controller
 @RequestMapping("/admin")
 public class AdminUserController {
-
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginHistoryRepository loginHistoryRepository;
 
-    public AdminUserController(UserRepository userRepository, RoleRepository roleRepository,
-                               PermissionRepository permissionRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
+    public AdminUserController(UserService userService, RoleRepository roleRepository,
+                               PermissionRepository permissionRepository, PasswordEncoder passwordEncoder,
+                               LoginHistoryRepository loginHistoryRepository) {
+        this.userService = userService;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.loginHistoryRepository = loginHistoryRepository;
     }
 
-    @GetMapping("/users")
-    public String listUsers(Model model) {
-        model.addAttribute("users", userRepository.findAll());
-        model.addAttribute("allRoles", roleRepository.findAll());
-        return "admin/users/list";
-    }
 
     @PostMapping("/users/create")
     public String createUser(@RequestParam String username,
@@ -47,44 +43,51 @@ public class AdminUserController {
                              @RequestParam String email,
                              @RequestParam(required = false) List<Long> roleIds,
                              RedirectAttributes redirectAttributes) {
-        if (userRepository.findByUsername(username).isPresent()) {
+        if (userService.findByUsername(username).isPresent()) {
             redirectAttributes.addFlashAttribute("error", "Username đã tồn tại");
             return "redirect:/admin/users";
         }
-        
+        if (userService.findByEmail(email).isPresent()) {
+            redirectAttributes.addFlashAttribute("error", "Email đã tồn tại");
+            return "redirect:/admin/users";
+        }
+
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
         user.setActive(true);
-        
+
         if (roleIds != null && !roleIds.isEmpty()) {
             Set<Role> roles = new HashSet<>(roleRepository.findAllById(roleIds));
             user.setRoles(roles);
         }
-        
-        userRepository.save(user);
+
+        userService.save(user);
         redirectAttributes.addFlashAttribute("success", "Tạo tài khoản nhân viên thành công");
         return "redirect:/admin/users";
     }
 
     @GetMapping("/users/toggle-lock/{id}")
     public String toggleLock(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        User user = userRepository.findById(id).orElse(null);
+        User user = userService.findById(id);
         if (user != null) {
             user.setActive(!user.isActive());
-            userRepository.save(user);
+            userService.save(user);
             redirectAttributes.addFlashAttribute("success", user.isActive() ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản");
+            return "redirect:/admin/users";
         }
+        redirectAttributes.addFlashAttribute("error", "Khóa thất bại");
         return "redirect:/admin/users";
+
     }
 
     @PostMapping("/users/reset-password/{id}")
     public String resetPassword(@PathVariable Long id, @RequestParam String newPassword, RedirectAttributes redirectAttributes) {
-        User user = userRepository.findById(id).orElse(null);
+        User user = userService.findById(id);
         if (user != null) {
             user.setPassword(passwordEncoder.encode(newPassword));
-            userRepository.save(user);
+            userService.save(user);
             redirectAttributes.addFlashAttribute("success", "Khôi phục mật khẩu thành công");
         }
         return "redirect:/admin/users";
@@ -92,7 +95,7 @@ public class AdminUserController {
 
     @PostMapping("/users/assign-role/{id}")
     public String assignRole(@PathVariable Long id, @RequestParam(required = false) List<Long> roleIds, RedirectAttributes redirectAttributes) {
-        User user = userRepository.findById(id).orElse(null);
+        User user = userService.findById(id);
         if (user != null) {
             if (roleIds != null && !roleIds.isEmpty()) {
                 Set<Role> roles = new HashSet<>(roleRepository.findAllById(roleIds));
@@ -100,12 +103,14 @@ public class AdminUserController {
             } else {
                 user.setRoles(new HashSet<>());
             }
-            userRepository.save(user);
+            userService.save(user);
             redirectAttributes.addFlashAttribute("success", "Gán role thành công");
+            return "redirect:/admin/users";
         }
+        redirectAttributes.addFlashAttribute("error", "Gán role thất bại ");
         return "redirect:/admin/users";
     }
-    
+
     @PostMapping("/roles/update-permissions/{id}")
     public String updatePermissions(@PathVariable Long id, @RequestParam(required = false) List<Long> permissionIds, RedirectAttributes redirectAttributes) {
         Role role = roleRepository.findById(id).orElse(null);
@@ -120,34 +125,69 @@ public class AdminUserController {
         }
         return "redirect:/admin/roles";
     }
+
     @GetMapping("/users/delete/{id}")
     String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try{
-            userRepository.deleteById(id);
-            redirectAttributes.addFlashAttribute("success","Xóa thành công");
-             return "redirect:/admin/users";
+        try {
+            userService.deleteById(id);
+            redirectAttributes.addFlashAttribute("success", "Xóa thành công");
+            return "redirect:/admin/users";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error","Xóa Thất Bại");
+            redirectAttributes.addFlashAttribute("error", "Xóa Thất Bại");
             return "redirect:/admin/users";
         }
     }
-@PostMapping("/update-user/{id}")
-    String updateUser(@PathVariable long id,
-                      @RequestParam String newUsername,
-                      @RequestParam String newEmail,
-                      RedirectAttributes redirectAttributes) {
-        try{
-            User user = userRepository.findById(id).orElseThrow();
+
+    @PostMapping("/users/update/{id}")
+    public String updateUser(@PathVariable Long id,
+                             @RequestParam String newUsername,
+                             @RequestParam String newEmail,
+                             RedirectAttributes redirectAttributes) {
+
+        User user = userService.findById(id);
+        if (user != null) {
             user.setUsername(newUsername);
             user.setEmail(newEmail);
-            userRepository.save(user);
-            redirectAttributes.addFlashAttribute("success","update Thành Công");
+            userService.save(user);
+            redirectAttributes.addFlashAttribute("success", "Cập nhật thành công");
             return "redirect:/admin/users";
         }
-        catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error","Chỉnh sửa Thất Bại");
-            return "redirect:/admin/users";
-        }
+        redirectAttributes.addFlashAttribute("error", "Chỉnh sửa thất bại (Không tìm thấy thành viên)");
+        return "redirect:/admin/users";
+    }
 
-}
+    @GetMapping("/users")
+    public String listUsers(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Long roleId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        
+        String roleName = null;
+        if (roleId != null) {
+            java.util.Optional<com.example.demo.model.Role> optionalRole = roleRepository.findById(roleId);
+            roleName = optionalRole.map(com.example.demo.model.Role::getRoleName).orElse(null);
+        }
+        
+        Page<User> userPage = userService.searchUser(username, email, roleName, page, size);
+
+        model.addAttribute("users", userPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", userPage.getTotalPages());
+        model.addAttribute("allRoles", roleRepository.findAll());
+        model.addAttribute("usernameKey", username);
+        model.addAttribute("emailKey", email);
+        model.addAttribute("roleKey", roleName);
+        model.addAttribute("roleIdKey", roleId);
+
+        return "admin/users/list";
+    }
+
+    @GetMapping("/login-history")
+    public String loginHistory(Model model) {
+        model.addAttribute("history", loginHistoryRepository.findAllByOrderByLoginTimeDesc());
+        return "admin/users/login_history";
+    }
 }

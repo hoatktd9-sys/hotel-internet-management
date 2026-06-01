@@ -1,260 +1,138 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Chi tiết phòng</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-
-    <style>
-
-        body{
-            background:#f4f6f9;
-            padding:40px;
-            font-family:Arial;
-        }
-
-        .detail-box{
-            max-width:900px;
-            margin:auto;
-            background:white;
-            padding:30px;
-            border-radius:15px;
-            box-shadow:0 0 15px rgba(0,0,0,0.1);
-        }
-
-        .title{
-            font-size:36px;
-            font-weight:bold;
-            margin-bottom:30px;
-            text-align:center;
-        }
-
-        .room-image{
-            width:100%;
-            height:350px;
-            object-fit:cover;
-            border-radius:15px;
-            margin-bottom:30px;
-            border:1px solid #ddd;
-        }
-
-        .section-title{
-            font-size:24px;
-            font-weight:bold;
-            margin-top:30px;
-            margin-bottom:20px;
-            border-bottom:2px solid #ddd;
-            padding-bottom:10px;
-        }
-
-        .info{
-            margin-bottom:15px;
-            font-size:18px;
-        }
-
-        .status{
-            padding:6px 15px;
-            border-radius:20px;
-            font-weight:bold;
-        }
-
-        .available{
-            background:#d4edda;
-            color:#155724;
-        }
-
-        .occupied{
-            background:#f8d7da;
-            color:#721c24;
-        }
-
-        .cleaning{
-            background:#fff3cd;
-            color:#856404;
-        }
-
-        .maintenance{
-            background:#d1ecf1;
-            color:#0c5460;
-        }
-
-        .spec-grid{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:20px;
-            margin-top:20px;
-        }
-
-        .spec-card{
-            background:#f8f9fa;
-            padding:20px;
-            border-radius:12px;
-            border:1px solid #ddd;
-        }
-
-        .spec-title{
-            font-size:20px;
-            font-weight:bold;
-            margin-bottom:10px;
-        }
-
-    </style>
-
-</head>
-
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Chi tiết phòng - Gaming Hotel')}"></head>
 <body>
+<div class="container-fluid">
+    <!-- GROUPED NAVBAR -->
+    <div th:replace="~{fragments/layout :: navbar('Chi tiết phòng')}"></div>
 
-<div class="detail-box">
-
-    <!-- TITLE -->
-    <div class="title">
-        Chi tiết phòng
-    </div>
-
-    <!-- IMAGE -->
-    <div th:if="${room.image != null}">
-
-        <img th:src="@{'/uploads/' + ${room.image}}"
-             class="room-image">
-
-    </div>
-
-    <!-- THÔNG TIN -->
-    <div class="section-title">
-        Thông tin phòng
-    </div>
-
-    <div class="info">
-        <b>ID:</b>
-        <span th:text="${room.id}"></span>
-    </div>
-
-    <div class="info">
-        <b>Tên phòng:</b>
-        <span th:text="${room.roomName}"></span>
-    </div>
-
-    <div class="info">
-        <b>Giá:</b>
-        <span th:text="${#numbers.formatDecimal(room.price,1,0)}"></span>
-        VNĐ / giờ
-    </div>
-
-    <div class="info">
-        <b>Số máy:</b>
-        <span th:text="${room.computerCount}"></span>
-    </div>
-
-    <div class="info">
-        <b>Loại phòng:</b>
-        <span th:text="${room.roomType}"></span>
-    </div>
-
-    <div class="info">
-        <b>Mô tả:</b>
-        <span th:text="${room.description}"></span>
-    </div>
-
-    <!-- STATUS -->
-    <div class="info">
-
-        <b>Trạng thái:</b>
-
-        <span th:if="${room.status.name() == 'AVAILABLE'}"
-              class="status available">
-            Trống
-        </span>
-
-        <span th:if="${room.status.name() == 'OCCUPIED'}"
-              class="status occupied">
-            Đang sử dụng
-        </span>
-
-        <span th:if="${room.status.name() == 'CLEANING'}"
-              class="status cleaning">
-            Đang dọn dẹp
-        </span>
-
-        <span th:if="${room.status.name() == 'MAINTENANCE'}"
-              class="status maintenance">
-            Bảo trì
-        </span>
-
-    </div>
-
-    <!-- CẤU HÌNH -->
-    <div class="section-title">
-        Cấu hình máy tính
-    </div>
-
-    <div class="spec-grid">
-
-        <!-- CPU -->
-        <div class="spec-card">
-            <div class="spec-title">
-                CPU
+    <div style="max-width: 900px; margin: 0 auto;" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+            <h3 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-display text-primary"></i> 
+                Chi tiết cấu hình phòng: <span class="text-primary" th:text="${room.roomName}">Tên phòng</span>
+            </h3>
+            <div class="d-flex gap-2">
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
+                <a th:href="@{/edit/{id}(id=${room.id})}" sec:authorize="hasRole('ADMIN')" class="btn btn-warning fw-bold text-white"><i class="bi bi-pencil-square"></i> Chỉnh sửa phòng</a>
             </div>
-
-            <div th:text="${room.cpu}"></div>
         </div>
 
-        <!-- RAM -->
-        <div class="spec-card">
-            <div class="spec-title">
-                RAM
+        <div class="card-box bg-white p-4 rounded shadow-sm">
+            <!-- IMAGE -->
+            <div class="text-center mb-4" th:if="${room.image != null and room.image != ''}">
+                <img th:src="@{'/uploads/' + ${room.image}}"
+                     class="img-fluid rounded shadow-sm"
+                     style="max-height: 380px; object-fit: cover; width: 100%; max-width: 650px;"
+                     alt="Room Image">
             </div>
 
-            <div th:text="${room.ram}"></div>
-        </div>
-
-        <!-- VGA -->
-        <div class="spec-card">
-            <div class="spec-title">
-                VGA
+            <!-- ROOM DETAILS -->
+            <h4 class="border-bottom pb-2 mb-3 text-primary fw-bold"><i class="bi bi-info-circle-fill"></i> Thông tin tổng quan</h4>
+            <div class="row info-list mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="bg-light p-3 rounded border">
+                        <span class="text-muted d-block small">Mã phòng (ID)</span>
+                        <b class="fs-5 text-dark" th:text="${room.id}">1</b>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="bg-light p-3 rounded border">
+                        <span class="text-muted d-block small">Tên phòng máy</span>
+                        <b class="fs-5 text-dark" th:text="${room.roomName}">Room Name</b>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="bg-light p-3 rounded border">
+                        <span class="text-muted d-block small">Đơn giá thuê</span>
+                        <b class="fs-5 text-success" th:text="${#numbers.formatDecimal(room.price,1,0)} + ' VNĐ / giờ'">15,000</b>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="bg-light p-3 rounded border">
+                        <span class="text-muted d-block small">Trạng thái phòng</span>
+                        <div class="mt-1">
+                            <span th:if="${room.status.name() == 'AVAILABLE'}" class="badge bg-success px-3 py-2"><i class="bi bi-check-circle"></i> Trống</span>
+                            <span th:if="${room.status.name() == 'OCCUPIED'}" class="badge bg-danger px-3 py-2"><i class="bi bi-play-circle"></i> Đang hoạt động</span>
+                            <span th:if="${room.status.name() == 'RESERVED'}" class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-calendar-event"></i> Đặt trước</span>
+                            <span th:if="${room.status.name() == 'CLEANING'}" class="badge bg-info px-3 py-2"><i class="bi bi-brush"></i> Đang dọn dẹp</span>
+                            <span th:if="${room.status.name() == 'MAINTENANCE'}" class="badge bg-secondary px-3 py-2"><i class="bi bi-wrench"></i> Bảo trì</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="bg-light p-3 rounded border">
+                        <span class="text-muted d-block small">Số lượng máy tính (PC)</span>
+                        <b class="fs-5 text-dark" th:text="${room.computerCount} + ' máy'">1 PC</b>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="bg-light p-3 rounded border">
+                        <span class="text-muted d-block small">Loại cấu hình</span>
+                        <b class="fs-5 text-info" th:text="${room.roomType != null ? room.roomType.name : 'Chưa thiết lập'}">Standard</b>
+                    </div>
+                </div>
+                <div class="col-12 mb-3" th:if="${room.description != null and room.description != ''}">
+                    <div class="bg-light p-3 rounded border">
+                        <span class="text-muted d-block small">Mô tả thêm</span>
+                        <span class="text-dark" th:text="${room.description}">Mô tả</span>
+                    </div>
+                </div>
             </div>
 
-            <div th:text="${room.vga}"></div>
-        </div>
+            <!-- HARDWARE SPECIFICATIONS -->
+            <h4 class="border-bottom pb-2 mb-3 text-success fw-bold"><i class="bi bi-cpu-fill"></i> Thông số phần cứng chi tiết</h4>
+            <div class="row">
+                <!-- CPU -->
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 bg-light rounded border border-start-0 border-top-0 border-bottom-0 border-3 border-success">
+                        <span class="text-muted d-block small fw-bold text-success">BỘ VI XỬ LÝ (CPU)</span>
+                        <span class="fw-bold text-dark" th:text="${room.cpu != null and room.cpu != '' ? room.cpu : 'Intel/AMD Core'}">CPU</span>
+                    </div>
+                </div>
 
-        <!-- SSD -->
-        <div class="spec-card">
-            <div class="spec-title">
-                SSD
+                <!-- RAM -->
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 bg-light rounded border border-start-0 border-top-0 border-bottom-0 border-3 border-success">
+                        <span class="text-muted d-block small fw-bold text-success">BỘ NHỚ TRONG (RAM)</span>
+                        <span class="fw-bold text-dark" th:text="${room.ram != null and room.ram != '' ? room.ram : '16GB DDR4'}">RAM</span>
+                    </div>
+                </div>
+
+                <!-- VGA -->
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 bg-light rounded border border-start-0 border-top-0 border-bottom-0 border-3 border-success">
+                        <span class="text-muted d-block small fw-bold text-success">CARD ĐỒ HỌA (VGA)</span>
+                        <span class="fw-bold text-dark" th:text="${room.vga != null and room.vga != '' ? room.vga : 'NVIDIA RTX'}">VGA</span>
+                    </div>
+                </div>
+
+                <!-- SSD -->
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 bg-light rounded border border-start-0 border-top-0 border-bottom-0 border-3 border-success">
+                        <span class="text-muted d-block small fw-bold text-success">KÍCH THƯỚC SSD</span>
+                        <span class="fw-bold text-dark" th:text="${room.ssd != null and room.ssd != '' ? room.ssd : 'NVMe 512GB'}">SSD</span>
+                    </div>
+                </div>
+
+                <!-- MONITOR -->
+                <div class="col-12 mb-3">
+                    <div class="p-3 bg-light rounded border border-start-0 border-top-0 border-bottom-0 border-3 border-success">
+                        <span class="text-muted d-block small fw-bold text-success">MÀN HÌNH HIỂN THỊ</span>
+                        <span class="fw-bold text-dark" th:text="${room.monitor != null and room.monitor != '' ? room.monitor : '24 inch IPS'}">Monitor</span>
+                    </div>
+                </div>
             </div>
 
-            <div th:text="${room.ssd}"></div>
-        </div>
-
-        <!-- MONITOR -->
-        <div class="spec-card">
-            <div class="spec-title">
-                Màn hình
+            <!-- BACK & EDIT ACTIONS -->
+            <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
+                <a href="/rooms" class="btn btn-secondary px-4 fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
+                <a th:href="@{/edit/{id}(id=${room.id})}" sec:authorize="hasRole('ADMIN')" class="btn btn-warning text-white px-4 fw-bold"><i class="bi bi-pencil-square"></i> Chỉnh sửa cấu hình</a>
             </div>
-
-            <div th:text="${room.monitor}"></div>
         </div>
-
     </div>
-
-    <!-- BUTTON -->
-    <div class="mt-4 d-flex gap-2">
-
-        <a href="/rooms"
-           class="btn btn-secondary">
-            Quay lại
-        </a>
-
-        <a th:href="@{/edit/{id}(id=${room.id})}"
-           class="btn btn-warning">
-            Sửa
-        </a>
-
-    </div>
-
 </div>
+
 
 </body>
 </html>

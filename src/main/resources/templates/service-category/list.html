@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Quản lý nhóm dịch vụ - Gaming Hotel')}"></head>
+<body>
+<div class="container-fluid">
+    <!-- UNIFIED NAVBAR -->
+    <div th:replace="~{fragments/layout :: navbar('Quản lý nhóm dịch vụ')}"></div>
+
+    <div class="card-box mt-4 bg-white p-4 rounded shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <h2 class="fw-bold mb-0 text-dark" style="font-size: 1.6rem;">
+                <i class="bi bi-grid-fill text-warning"></i> QUẢN LÝ CẤU HÌNH NHÓM DỊCH VỤ
+            </h2>
+            <div class="d-flex gap-2">
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
+                <a href="/admin/products" class="btn btn-primary fw-bold"><i class="bi bi-egg-fried"></i> Quản lý thực đơn món ăn →</a>
+            </div>
+        </div>
+git push --set-upstream origin dev
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="main-title mb-0">QUẢN LÝ DANH MỤC / NHÓM DỊCH VỤ</h2>
+        <div>
+            <a href="/admin/products" class="btn btn-primary fw-bold me-2">Quản lý thực đơn món ăn →</a>
+            <a href="/rooms" class="btn btn-secondary">← Quay lại sảnh chính</a>
+        </div>
+    </div>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row g-4">
+            <!-- LEFT PANEL: FORM -->
+            <div class="col-lg-4 col-md-5">
+                <div class="p-3 bg-light rounded border">
+                    <h4 class="mb-3 text-secondary fw-bold border-bottom pb-2" th:text="${isEdit} ? 'Cập nhật nhóm dịch vụ' : 'Thêm nhóm mới'"></h4>
+
+                    <form th:action="@{/service-categories/save}" th:object="${category}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark">Tên nhóm dịch vụ</label>
+                            <input type="text" class="form-control" th:field="*{name}" placeholder="Ví dụ: Đồ ăn, Nước uống, Thuốc lá..." required>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark">Mô tả chi tiết nhóm</label>
+                            <textarea class="form-control" th:field="*{description}" rows="3" placeholder="Nhập mô tả tóm tắt..."></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success w-100 fw-bold" th:text="${isEdit} ? 'Cập nhật' : 'Thêm mới'"></button>
+                            <a th:if="${isEdit}" href="/service-categories" class="btn btn-outline-secondary w-100 fw-bold">Hủy bỏ</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: TABLE LIST -->
+            <div class="col-lg-8 col-md-7">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover align-middle bg-white mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th style="width: 10%" class="text-center">ID</th>
+                            <th style="width: 30%">Tên nhóm dịch vụ</th>
+                            <th style="width: 40%">Mô tả tóm tắt</th>
+                            <th style="width: 20%" class="text-center">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="cat : ${categories}">
+                            <td class="text-center fw-bold" th:text="${cat.id}"></td>
+                            <td><span class="fw-bold text-dark" th:text="${cat.name}"></span></td>
+                            <td th:text="${cat.description}"></td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/service-categories/edit/{id}(id=${cat.id})}" class="btn btn-warning text-white fw-bold"><i class="bi bi-pencil-square"></i> Sửa</a>
+                                    <a th:href="@{/service-categories/delete/{id}(id=${cat.id})}" class="btn btn-danger fw-bold"
+                                       onclick="return confirm('Bạn có chắc chắn muốn xóa nhóm này không?')"><i class="bi bi-trash"></i> Xóa</a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(categories)}">
+                            <td colspan="4" class="text-center text-muted py-4"><i class="bi bi-folder-x" style="font-size: 2rem;"></i><br>Chưa có nhóm dịch vụ nào được cấu hình.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>

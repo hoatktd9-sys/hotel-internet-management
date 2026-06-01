@@ -6,13 +6,32 @@
     <div th:replace="~{fragments/layout :: navbar('Quản lý nhân viên')}"></div>
     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-
+    <div>
+        <form th:action="@{/admin/users}" class="d-flex" th:method="get">
+            <label> Tìm theo tên</label>
+            <input type="text" name="username" th:value="${usernameKey}" class="form-control me-2">
+            <label> Tìm theo email</label>
+            <input type="email" name="email" th:value="${emailKey}" class="form-control me-2">
+            <label> Tìm theo Role</label>
+            <select name="roleId" class="form-select me-2">
+                <option value="">-- Chọn Role --</option>
+                <option th:each="r : ${allRoles}"
+                        th:value="${r.id}"
+                        th:text="${r.roleName}"
+                        th:selected="${r.id == roleIdKey}"></option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Tìm Kiếm</button>
+        </form>
+    </div>
     <div class="card-box">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3>Danh sách nhân viên</h3>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                + Tạo tài khoản
-            </button>
+            <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill text-primary"></i> Danh sách nhân viên</h3>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                    <i class="bi bi-plus-circle"></i> Tạo tài khoản mới
+                </button>
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
+            </div>
         </div>
 
     <table class="table table-bordered table-striped bg-white">
@@ -151,7 +170,7 @@
     <div class="modal fade" th:id="'updateModal' + ${u.id}" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form th:action="@{/admin/update-user/{id}(id=${u.id})}" method="post">
+                <form th:action="@{/admin/users/update/{id}(id=${u.id})}" method="post">
                     <div class="modal-header">
                         <h5 class="modal-title" th:text="'Chỉnh sửa tài khoản: ' + ${u.username}"></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -174,6 +193,6 @@
             </div>
         </div>
     </div>
-</div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</div> 
 </body>
 </html>

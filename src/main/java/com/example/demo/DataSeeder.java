@@ -19,11 +19,13 @@ public class DataSeeder implements CommandLineRunner {
     private final PermissionService permissionService;
     private final RoleService roleService;
     private final UserService userService;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    public DataSeeder(PermissionService permissionService, RoleService roleService, UserService userService) {
+    public DataSeeder(PermissionService permissionService, RoleService roleService, UserService userService, org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.permissionService = permissionService;
         this.roleService = roleService;
         this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
     }
     @Transactional
     public void run(String... args) throws Exception {
@@ -36,7 +38,9 @@ public class DataSeeder implements CommandLineRunner {
                 Map.entry("Edit_Room", "Chỉnh sửa phòng"),
                 Map.entry("Delete_Room", "Xóa phòng"),
                 Map.entry("View_Room", "Xem danh sách phòng"),
-                Map.entry("View_History", "Xem danh lịch sử check-in")
+                Map.entry("View_History", "Xem danh lịch sử check-in"),
+                Map.entry("Admin_Service", "Quản lý danh mục và sản phẩm dịch vụ"),
+                Map.entry("Order_Service", "Gọi món và sử dụng dịch vụ")
         );
         Set<Permission> AdminPermissions = new HashSet<>();
         for(Map.Entry<String,String> entry : permissions.entrySet()){
@@ -53,10 +57,11 @@ public class DataSeeder implements CommandLineRunner {
         roleService.saveRole(roleAdmin);
 
         String defaultAdminUsername = "admin";
-        if (userService.findByUsername(defaultAdminUsername).isEmpty()) {
+        java.util.Optional<User> adminOpt = userService.findByUsername(defaultAdminUsername);
+        if (adminOpt.isEmpty()) {
             User adminUser = new User();
             adminUser.setUsername(defaultAdminUsername);
-            adminUser.setPassword("admin123");
+            adminUser.setPassword(passwordEncoder.encode("admin123"));
             adminUser.setEmail("admin@gmail.com");
             adminUser.setActive(true);
             Set<Role> roles = new HashSet<>();
@@ -64,6 +69,28 @@ public class DataSeeder implements CommandLineRunner {
             adminUser.setRoles(roles);
             userService.save(adminUser);
             System.out.println(">>> Đã khởi tạo thành công tài khoản admin mặc định! <<<");
+        } else {
+            User adminUser = adminOpt.get();
+            adminUser.setPassword(passwordEncoder.encode("admin123"));
+            adminUser.setActive(true);
+            if (adminUser.getRoles() == null || adminUser.getRoles().isEmpty()) {
+                Set<Role> roles = new HashSet<>();
+                roles.add(roleAdmin);
+                adminUser.setRoles(roles);
+            } else {
+                boolean hasAdmin = false;
+                for (Role r : adminUser.getRoles()) {
+                    if ("ADMIN".equals(r.getRoleName())) {
+                        hasAdmin = true;
+                        break;
+                    }
+                }
+                if (!hasAdmin) {
+                    adminUser.getRoles().add(roleAdmin);
+                }
+            }
+            userService.save(adminUser);
+            System.out.println(">>> Đã cập nhật mật khẩu mã hóa và quyền ADMIN cho tài khoản admin! <<<");
         }
     }
 

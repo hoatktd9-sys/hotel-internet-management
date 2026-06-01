@@ -1,31 +1,35 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${isEdit} ? 'Cập nhật loại phòng' : 'Thêm loại phòng'"></title>
-    <style>
-        body{ font-family: Arial; background:#f4f4f4; padding:40px; }
-        .container{ width:600px; margin:auto; background:white; padding:30px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-        h1{ text-align:center; margin-bottom:30px; }
-        input{ width:100%; padding:10px; margin-top:5px; margin-bottom:20px; border:1px solid #ccc; border-radius:5px; box-sizing:border-box; }
-        button{ background:#28a745; color:white; border:none; padding:12px 20px; border-radius:5px; cursor:pointer; }
-        button:hover{ background:#218838; }
-        .error{ color:red; font-size:14px; margin-top:-15px; margin-bottom:15px; }
-        .back{ display:inline-block; margin-top:20px; text-decoration:none; }
-    </style>
-</head>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Quản lý loại phòng')}"></head>
 <body>
 <div class="container">
-    <h1 th:text="${isEdit} ? 'Cập nhật loại phòng' : 'Thêm loại phòng'"></h1>
-    <form th:action="${isEdit} ? '/admin/room-types/update' : '/admin/room-types/save'" th:object="${roomType}" method="post">
-        <input type="hidden" th:field="*{id}">
-        <label>Tên loại phòng</label>
-        <input type="text" th:field="*{name}">
-        <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
-        <button type="submit" th:text="${isEdit} ? 'Cập nhật' : 'Lưu'"></button>
-    </form>
-    <br>
-    <a href="/admin/room-types" class="back">← Quay lại danh sách</a>
+    <div th:replace="~{fragments/layout :: navbar('Quản lý loại phòng')}"></div>
+
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+
+    <div style="max-width: 600px; margin: 0 auto;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold mb-0 text-dark" th:text="${isEdit} ? 'Cập nhật loại phòng' : 'Thêm loại phòng'"></h3>
+            <div class="d-flex gap-2">
+                <a href="/rooms" class="btn btn-secondary fw-bold"><i class="bi bi-house"></i> Quay lại trang chủ</a>
+                <a href="/admin/room-types" class="btn btn-info text-white fw-bold"><i class="bi bi-tags"></i> Danh sách loại phòng</a>
+            </div>
+        </div>
+
+        <div class="card-box">
+        <form th:action="${isEdit} ? '/admin/room-types/update' : '/admin/room-types/save'" th:object="${roomType}" method="post">
+            <input type="hidden" th:field="*{id}">
+            
+            <div class="mb-3">
+                <label class="form-label">Tên loại phòng</label>
+                <input type="text" class="form-control" th:field="*{name}">
+                <div class="text-danger" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+            </div>
+
+            <button type="submit" class="btn btn-success" th:text="${isEdit} ? 'Cập nhật' : 'Lưu'"></button>
+        </form>
+    </div>
+    </div>
 </div>
 </body>
 </html>

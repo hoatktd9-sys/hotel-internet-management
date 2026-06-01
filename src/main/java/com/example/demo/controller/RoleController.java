@@ -15,12 +15,17 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin/roles")
 public class RoleController {
-    @Autowired
+
    private RoleService roleService;
-    @Autowired
+
    private PermissionService permissionservice;
 
-   public RoleService getRoleService() {
+    public RoleController(PermissionService permissionservice, RoleService roleService) {
+        this.permissionservice = permissionservice;
+        this.roleService = roleService;
+    }
+
+    public RoleService getRoleService() {
         return roleService;
     }
     public void setRoleService(RoleService roleService) {

@@ -1,28 +1,28 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Xác nhận thanh toán</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Xác nhận thanh toán')}"></head>
 <body class="bg-light">
 
-<div class="container mt-5">
-    <div class="card shadow p-4" style="max-width: 800px; margin: 0 auto;">
+<div class="container mt-4">
+    <div th:replace="~{fragments/layout :: navbar('Xác nhận thanh toán')}"></div>
+
+    <div class="card shadow p-4 mt-4" style="max-width: 850px; margin: 0 auto;">
 
         <h2 class="mb-4 text-center text-primary fw-bold">
             🧾 HÓA ĐƠN THANH TOÁN
         </h2>
 
-        <table class="table table-bordered align-middle">
+        <table class="table table-bordered align-middle bg-white shadow-sm">
             <tr class="table-dark text-white">
                 <th colspan="2">🏢 CHI TIẾT SỬ DỤNG PHÒNG</th>
             </tr>
             <tr>
                 <th style="width: 35%;">Khách hàng</th>
                 <td th:text="${checkIn.customer != null ? checkIn.customer.fullName : 'Khách vãng lai'}" class="fw-bold text-secondary"></td>
+            </tr>
+            <tr>
+                <th>Số CCCD</th>
+                <td th:text="${checkIn.customer != null ? checkIn.customer.identityNumber : 'N/A'}" class="fw-bold text-secondary"></td>
             </tr>
             <tr>
                 <th>Phòng sử dụng</th>
@@ -32,11 +32,15 @@
                 <th>Mốc thời gian</th>
                 <td>
                     Mở máy: <span th:text="${#temporals.format(checkIn.checkInTime, 'dd/MM/yyyy HH:mm:ss')}"></span> <br>
-                    Tính tiền: <span th:text="${#temporals.format(tempCheckOutTime, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                    Tính tiền: <span th:text="${#temporals.format(checkIn.checkOutTime, 'dd/MM/yyyy HH:mm:ss')}"></span>
                 </td>
             </tr>
             <tr>
-                <th>Tổng thời gian sử dụng</th>
+                <th>Thời gian đăng ký ban đầu</th>
+                <td><span class="fw-bold text-info" th:text="${checkIn.expectedHours != null ? checkIn.expectedHours : 0.0}"></span> giờ</td>
+            </tr>
+            <tr>
+                <th>Tổng thời gian sử dụng thực tế</th>
                 <td>
                     <span class="badge bg-primary fs-6" th:text="${#numbers.formatDecimal(totalHours,1,2)} + ' giờ'"></span>
                 </td>
@@ -52,6 +56,15 @@
                 <td class="fw-bold text-dark">
                     <span th:text="${#numbers.formatDecimal(roomTotalPrice,1,0)}"></span> VNĐ
                 </td>
+            </tr>
+
+            <tr th:if="${checkIn.overtimeHours != null && checkIn.overtimeHours > 0}" class="table-warning">
+                <th class="text-danger">Số giờ quá giờ (Overtime)</th>
+                <td class="text-danger fw-bold"><span th:text="${#numbers.formatDecimal(checkIn.overtimeHours,1,2)}"></span> giờ</td>
+            </tr>
+            <tr th:if="${checkIn.overtimeCharge != null && checkIn.overtimeCharge > 0}" class="table-warning">
+                <th class="text-danger">Phụ phí quá giờ (1.5x đơn giá)</th>
+                <td class="text-danger fw-bold"><span th:text="${#numbers.formatDecimal(checkIn.overtimeCharge,1,0)}"></span> VNĐ</td>
             </tr>
 
             <tr class="table-warning text-dark" th:if="${not #lists.isEmpty(serviceOrders)}">
@@ -71,32 +84,57 @@
                     </div>
                 </td>
             </tr>
-
-            <tr class="table-success fs-5">
-                <th class="text-success fw-bold">TỔNG TIỀN PHẢI THANH TOÁN</th>
-                <td class="text-danger fw-bold">
-                    <span th:text="${#numbers.formatDecimal(finalBillPrice,1,0)}"></span> VNĐ
-                </td>
-            </tr>
         </table>
 
-        <form th:action="@{/billing/confirm}" method="post">
+        <form th:action="@{/billing/confirm}" method="post" class="mt-4 p-3 border rounded bg-light shadow-sm">
             <input type="hidden" name="id" th:value="${checkIn.id}">
             <input type="hidden" name="totalHours" th:value="${totalHours}">
-            <input type="hidden" name="finalPrice" th:value="${finalBillPrice}">
 
-            <div class="d-flex justify-content-between mt-4">
-                <a href="/rooms" class="btn btn-secondary px-4 fw-bold">
-                    ↩️ Hủy bỏ & Quay lại
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark">📌 Phụ thu khác (nếu có)</label>
+                <div class="input-group">
+                    <input type="number" id="surchargeInput" name="surcharge" value="0" min="0" step="1000" class="form-control" placeholder="Nhập số tiền phụ thu phát sinh...">
+                    <span class="input-group-text">VNĐ</span>
+                </div>
+                <small class="text-muted">Ví dụ: Tiền đền bù làm hỏng đồ phòng, dịch vụ giặt là bên ngoài,...</small>
+            </div>
+
+            <div class="mb-4 bg-white p-3 border rounded">
+                <h4 class="m-0 d-flex justify-content-between text-dark fw-bold">
+                    <span>TỔNG TIỀN PHẢI THANH TOÁN:</span>
+                    <span class="text-danger fw-bold" id="finalPriceSpan">
+                        <span th:text="${#numbers.formatDecimal(finalBillPrice,1,0)}"></span> VNĐ
+                    </span>
+                </h4>
+            </div>
+
+            <div class="d-flex justify-content-between gap-3">
+                <a href="/rooms" class="btn btn-secondary px-4 fw-bold py-2">
+                    ↩️ Hủy bỏ &amp; Quay lại
                 </a>
-                <button type="submit" class="btn btn-success px-4 fw-bold">
-                    ✅ Xác nhận & Thanh toán
+                <button type="submit" class="btn btn-success px-5 fw-bold py-2 fs-5 shadow-sm">
+                    ✅ Xác nhận &amp; Trả phòng
                 </button>
             </div>
         </form>
 
     </div>
 </div>
+
+<script th:inline="javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        /*[[th:inline="true"]]*/
+        const basePrice = /*[[${finalBillPrice}]]*/ 0;
+        const surchargeInput = document.getElementById("surchargeInput");
+        const finalPriceSpan = document.getElementById("finalPriceSpan");
+
+        surchargeInput.addEventListener("input", function() {
+            let surcharge = parseFloat(surchargeInput.value) || 0;
+            let finalPrice = basePrice + surcharge;
+            finalPriceSpan.textContent = finalPrice.toLocaleString('vi-VN') + " VNĐ";
+        });
+    });
+</script>
 
 </body>
 </html>

@@ -17,6 +17,12 @@ public interface CheckInRepository
 
     // ===== LỊCH SỬ PHÒNG =====
     List<CheckIn> findByRoomId(Long roomId);
+
+    // ===== TÌM THEO STATUS =====
+    List<CheckIn> findByStatus(String status);
+
+    // ===== TÌM THEO PHÒNG VÀ STATUS =====
+    Optional<CheckIn> findByRoomIdAndStatus(Long roomId, String status);
     // Tìm bản ghi Check-in mới nhất của một phòng (Cứu cánh khi dữ liệu lỗi)
     Optional<CheckIn> findFirstByRoomIdOrderByCheckInTimeDesc(Long roomId);
 }

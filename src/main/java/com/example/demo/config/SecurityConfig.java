@@ -45,6 +45,7 @@ public class SecurityConfig {
                         // ƯU TIÊN 1: Cho phép tất cả tài khoản đã đăng nhập đều có quyền vào trang gọi món dịch vụ
                         .requestMatchers("/admin/products/menu/**").authenticated()
                         // ƯU TIÊN 2: Các phân vùng quản trị cấu hình hệ thống khác giữ nguyên cho ADMIN
+                        .requestMatchers("/admin/products", "/admin/products/**").hasAnyAuthority("ROLE_ADMIN", "Admin_Service")
                         .requestMatchers("/admin/**", "/roles").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

@@ -99,18 +99,13 @@ public class RoomService {
                 .findByRoomNameContainingIgnoreCase(keyword);
     }
 
-    // ===== UPDATE STATUS =====
-
+    // ===== UPDATE STATUS CẬP NHẬT MỚI: AN TOÀN TUYỆT ĐỐI CHO TẤT CẢ CÁC PHÒNG =====
     public void updateStatus(
             Long id,
             RoomStatus status
     ) {
-
-        Room room = findById(id);
-
-        room.setStatus(status);
-
-        roomRepository.save(room);
+        // Sử dụng hàm cập nhật trực tiếp trường status thay vì save cả thực thể
+        roomRepository.updateRoomStatusOnly(id, status);
     }
 
     // ===== SEARCH NÂNG CAO =====

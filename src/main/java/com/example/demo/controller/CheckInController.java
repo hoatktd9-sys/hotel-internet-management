@@ -3,6 +3,8 @@ package com.example.demo.controller;
 import com.example.demo.enumtype.RoomStatus;
 import com.example.demo.model.CheckIn;
 import com.example.demo.model.Room;
+import com.example.demo.model.RoomServiceOrder;
+import com.example.demo.repository.RoomServiceOrderRepository;
 import com.example.demo.service.CheckInService;
 import com.example.demo.service.CustomerService;
 import com.example.demo.service.RoomService;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class CheckInController {
@@ -21,142 +25,155 @@ public class CheckInController {
     private final CheckInService checkInService;
     private final CustomerService customerService;
     private final RoomService roomService;
+    private final RoomServiceOrderRepository roomServiceOrderRepository;
 
     public CheckInController(
             CheckInService checkInService,
             CustomerService customerService,
-            RoomService roomService
+            RoomService roomService,
+            RoomServiceOrderRepository roomServiceOrderRepository
     ) {
         this.checkInService = checkInService;
         this.customerService = customerService;
         this.roomService = roomService;
+        this.roomServiceOrderRepository = roomServiceOrderRepository;
     }
 
-    // ===== HIỂN THỊ FORM CHECK-IN =====
     @GetMapping("/checkin")
     public String checkInPage(Model model){
-
-        model.addAttribute(
-                "customers",
-                customerService.findAll()
-        );
-
-        model.addAttribute(
-                "rooms",
-                roomService.getAll()
-        );
-
+        model.addAttribute("customers", customerService.findAll());
+        model.addAttribute("rooms", roomService.getAll());
         return "checkin/create";
     }
 
-    // ===== LƯU CHECK-IN =====
     @PostMapping("/checkin/save")
     public String saveCheckIn(
             @RequestParam Long customerId,
             @RequestParam Long roomId
     ){
-
         CheckIn checkIn = new CheckIn();
+        checkIn.setCustomer(customerService.findById(customerId));
 
-        // lấy khách hàng
-        checkIn.setCustomer(
-                customerService.findById(customerId)
-        );
-
-        // lấy phòng
         Room room = roomService.findById(roomId);
-
         checkIn.setRoom(room);
-
-        // thời gian check-in
         checkIn.setCheckInTime(LocalDateTime.now());
 
-        // đổi trạng thái phòng
-        room.setStatus(RoomStatus.OCCUPIED);
-
-        // lưu phòng
-        roomService.save(room);
-
-        // lưu check-in
+        roomService.updateStatus(roomId, RoomStatus.OCCUPIED);
         checkInService.save(checkIn);
 
         return "redirect:/rooms";
     }
 
-    // ===== CHECK-OUT =====
+    // 1. GIAO DIỆN XEM TRƯỚC HÓA ĐƠN XUẤT PHÒNG
     @GetMapping("/checkout/{roomId}")
     public String checkOut(
             @PathVariable Long roomId,
             Model model
     ) {
+        CheckIn checkIn = checkInService.findActiveByRoomId(roomId);
 
-        // tìm phiên check-in đang hoạt động
-        CheckIn checkIn =
-                checkInService.findActiveByRoomId(roomId);
-
-        // nếu không tồn tại
         if(checkIn == null){
             return "redirect:/rooms";
         }
 
-        // thời gian checkout
-        checkIn.setCheckOutTime(LocalDateTime.now());
+        LocalDateTime tempCheckOutTime = LocalDateTime.now();
+        Duration duration = Duration.between(checkIn.getCheckInTime(), tempCheckOutTime);
 
-        // tính thời gian sử dụng
-        Duration duration = Duration.between(
-                checkIn.getCheckInTime(),
-                checkIn.getCheckOutTime()
-        );
-
-        // đổi sang giờ (tối thiểu 1 giờ)
         double totalHours = Math.max(1.0, duration.toMinutes() / 60.0);
 
-        checkIn.setTotalHours(totalHours);
+        double roomPrice = 0.0;
+        if (checkIn.getRoom() != null) {
+            roomPrice = checkIn.getRoom().getPrice();
+        }
+        double roomTotalPrice = totalHours * roomPrice;
 
-        // lấy giá phòng
-        double roomPrice =
-                checkIn.getRoom().getPrice();
+        List<RoomServiceOrder> activeOrders = new ArrayList<>();
+        double totalServicePrice = 0.0;
 
-        // tính tổng tiền
-        double totalPrice =
-                totalHours * roomPrice;
+        try {
+            List<RoomServiceOrder> ordersInDb = roomServiceOrderRepository.findByRoomIdAndStatus(roomId, "PENDING");
+            if (ordersInDb != null) {
+                for (RoomServiceOrder order : ordersInDb) {
+                    if (order != null && order.getTotalPrice() != null) {
+                        activeOrders.add(order);
+                        totalServicePrice += order.getTotalPrice(); // Chốt giá chốt cứng lúc gọi
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi quét danh sách món ăn: " + e.getMessage());
+        }
 
-        checkIn.setTotalPrice(totalPrice);
+        double finalBillPrice = roomTotalPrice + totalServicePrice;
 
-        // lưu tạm vào DB để confirmBilling có thể tìm thấy dữ liệu đã tính toán
-        checkInService.save(checkIn);
-
-        // truyền sang giao diện billing
-        model.addAttribute(
-                "checkIn",
-                checkIn
-        );
+        model.addAttribute("checkIn", checkIn);
+        model.addAttribute("tempCheckOutTime", tempCheckOutTime);
+        model.addAttribute("totalHours", totalHours);
+        model.addAttribute("roomTotalPrice", roomTotalPrice);
+        model.addAttribute("serviceOrders", activeOrders);
+        model.addAttribute("totalServicePrice", totalServicePrice);
+        model.addAttribute("finalBillPrice", finalBillPrice);
 
         return "billing/confirm";
     }
 
-    // ===== XÁC NHẬN THANH TOÁN (ĐÃ THAY THẾ) =====
+    // 2. XỬ LÝ LƯU CHỐT HÓA ĐƠN XUỐNG CƠ SỞ DỮ LIỆU (ĐÃ TỐI ƯU BẢO MẬT KHÉP KÍN)
     @PostMapping("/billing/confirm")
     public String confirmBilling(
-            @RequestParam Long id
+            @RequestParam("id") Long id,
+            @RequestParam(value = "totalHours", defaultValue = "1.0") Double totalHours
     ) {
+        CheckIn checkIn = checkInService.findById(id);
+        if (checkIn == null) {
+            return "redirect:/rooms";
+        }
 
-        // lấy checkin từ DB
-        CheckIn checkIn =
-                checkInService.findById(id);
+        // Bước 1: Tính toán lại tiền phòng trực tiếp ở Backend
+        double roomPrice = 0.0;
+        if (checkIn.getRoom() != null) {
+            roomPrice = checkIn.getRoom().getPrice();
+        }
+        double calculatedRoomPrice = totalHours * roomPrice;
 
-        // lấy phòng
-        Room room =
-                checkIn.getRoom();
+        // Bước 2: Quét lại DB để lấy tổng tiền dịch vụ đã được khóa cứng tại thời điểm đặt
+        double calculatedServicePrice = 0.0;
+        List<RoomServiceOrder> activeOrders = null;
 
-        // chuyển trạng thái
-        room.setStatus(RoomStatus.CLEANING);
+        if (checkIn.getRoom() != null) {
+            Long roomId = checkIn.getRoom().getId();
+            activeOrders = roomServiceOrderRepository.findByRoomIdAndStatus(roomId, "PENDING");
+            if (activeOrders != null) {
+                for (RoomServiceOrder order : activeOrders) {
+                    if (order != null && order.getTotalPrice() != null) {
+                        calculatedServicePrice += order.getTotalPrice();
+                    }
+                }
+            }
+        }
 
-        // lưu phòng
-        roomService.save(room);
+        // Bước 3: Tổng hợp doanh thu cuối cùng an toàn tuyệt đối
+        double secureFinalPrice = calculatedRoomPrice + calculatedServicePrice;
 
-        // lưu checkin
+        // Bước 4: Lưu thông tin kết thúc phiên CheckIn
+        checkIn.setCheckOutTime(LocalDateTime.now());
+        checkIn.setTotalHours(totalHours);
+        checkIn.setTotalPrice(secureFinalPrice); // Lưu số tiền được xác thực bởi Backend
         checkInService.save(checkIn);
+
+        // Bước 5: Chuyển toàn bộ đơn dịch vụ của phòng sang trạng thái hoàn thành "DELIVERED"
+        if (activeOrders != null) {
+            for (RoomServiceOrder order : activeOrders) {
+                if (order != null) {
+                    order.setStatus("DELIVERED");
+                    roomServiceOrderRepository.save(order);
+                }
+            }
+        }
+
+        // Bước 6: Đổi trạng thái phòng sang dọn dẹp CLEANING
+        if (checkIn.getRoom() != null) {
+            roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.CLEANING);
+        }
 
         return "redirect:/rooms";
     }
@@ -164,12 +181,7 @@ public class CheckInController {
     @PreAuthorize("hasAuthority('View_History')")
     @GetMapping("/checkin/history")
     public String history(Model model){
-
-        model.addAttribute(
-                "list",
-                checkInService.getAll()
-        );
-
+        model.addAttribute("list", checkInService.getAll());
         return "checkin/history";
     }
 }

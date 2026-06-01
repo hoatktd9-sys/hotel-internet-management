@@ -39,4 +39,7 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private ServiceCategory category;
+    // BỔ SUNG CHO TÍNH NĂNG XÓA MỀM (FEATURE 37)
+    @Column(nullable = false)
+    private Boolean active = true; // Mặc định sản phẩm tạo ra sẽ ở trạng thái kinh doanh (true)
 }

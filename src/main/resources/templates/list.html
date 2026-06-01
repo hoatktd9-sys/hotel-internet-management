@@ -83,6 +83,7 @@
                    onclick="return confirm('Bạn có chắc muốn xóa phòng này?')">Xóa</a>
 
                 <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/checkout/{id}(id=${r.id})}" class="btn btn-primary btn-sm">Check-out</a>
+                <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/admin/products/menu(roomId=${r.id})}" class="btn btn-warning btn-sm fw-bold">🍔 Gọi món</a>
 
                 <a th:if="${r.status.name() == 'AVAILABLE'}" th:href="@{/change-status/{id}/{status}(id=${r.id},status='CLEANING')}" class="btn btn-warning btn-sm">Dọn dẹp</a>
                 <a th:if="${r.status.name() == 'CLEANING'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success btn-sm">Hoàn tất dọn dẹp</a>

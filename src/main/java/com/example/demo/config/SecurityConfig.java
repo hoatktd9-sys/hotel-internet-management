@@ -42,6 +42,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/login", "/css/**", "/js/**", "/images/**").permitAll()
+                        // ƯU TIÊN 1: Cho phép tất cả tài khoản đã đăng nhập đều có quyền vào trang gọi món dịch vụ
+                        .requestMatchers("/admin/products/menu/**").authenticated()
+                        // ƯU TIÊN 2: Các phân vùng quản trị cấu hình hệ thống khác giữ nguyên cho ADMIN
                         .requestMatchers("/admin/**", "/roles").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

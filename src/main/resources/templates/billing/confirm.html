@@ -3,160 +3,100 @@
 
 <head>
     <meta charset="UTF-8">
-
     <title>Xác nhận thanh toán</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body class="bg-light">
 
 <div class="container mt-5">
+    <div class="card shadow p-4" style="max-width: 800px; margin: 0 auto;">
 
-    <div class="card shadow p-4">
-
-        <h2 class="mb-4 text-center">
-
-            Xác nhận thanh toán
-
+        <h2 class="mb-4 text-center text-primary fw-bold">
+            🧾 HÓA ĐƠN THANH TOÁN
         </h2>
 
-        <table class="table table-bordered">
-
-            <!-- KHÁCH -->
-
-            <tr>
-
-                <th>Khách hàng</th>
-
-                <td th:text="${checkIn.customer.fullName}"></td>
-
+        <table class="table table-bordered align-middle">
+            <tr class="table-dark text-white">
+                <th colspan="2">🏢 CHI TIẾT SỬ DỤNG PHÒNG</th>
             </tr>
-
-            <!-- PHÒNG -->
-
             <tr>
-
-                <th>Phòng</th>
-
-                <td th:text="${checkIn.room.roomName}"></td>
-
+                <th style="width: 35%;">Khách hàng</th>
+                <td th:text="${checkIn.customer != null ? checkIn.customer.fullName : 'Khách vãng lai'}" class="fw-bold text-secondary"></td>
             </tr>
-
-            <!-- CHECK-IN -->
-
             <tr>
-
-                <th>Giờ check-in</th>
-
-                <td th:text="${#temporals.format(checkIn.checkInTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
-
+                <th>Phòng sử dụng</th>
+                <td th:text="${checkIn.room != null ? checkIn.room.roomName : 'N/A'}" class="fw-bold text-success"></td>
             </tr>
-
-            <!-- CHECK-OUT -->
-
             <tr>
-
-                <th>Giờ check-out</th>
-
-                <td th:text="${#temporals.format(checkIn.checkOutTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
-
-            </tr>
-
-            <!-- TỔNG GIỜ -->
-
-            <tr>
-
-                <th>Tổng giờ sử dụng</th>
-
+                <th>Mốc thời gian</th>
                 <td>
-
-                    <span th:text="${#numbers.formatDecimal(checkIn.totalHours,1,2)}"></span>
-
-                    giờ
-
+                    Mở máy: <span th:text="${#temporals.format(checkIn.checkInTime, 'dd/MM/yyyy HH:mm:ss')}"></span> <br>
+                    Tính tiền: <span th:text="${#temporals.format(tempCheckOutTime, 'dd/MM/yyyy HH:mm:ss')}"></span>
                 </td>
-
             </tr>
-
-            <!-- ĐƠN GIÁ -->
-
             <tr>
-
+                <th>Tổng thời gian sử dụng</th>
+                <td>
+                    <span class="badge bg-primary fs-6" th:text="${#numbers.formatDecimal(totalHours,1,2)} + ' giờ'"></span>
+                </td>
+            </tr>
+            <tr>
                 <th>Đơn giá phòng</th>
-
                 <td>
-
-                    <span th:text="${checkIn.room.price}"></span>
-
-                    VNĐ / giờ
-
+                    <span th:text="${checkIn.room != null} ? ${#numbers.formatDecimal(checkIn.room.price,1,0)} : '0'"></span> VNĐ / giờ
                 </td>
-
+            </tr>
+            <tr>
+                <th>Tiền phòng tạm tính</th>
+                <td class="fw-bold text-dark">
+                    <span th:text="${#numbers.formatDecimal(roomTotalPrice,1,0)}"></span> VNĐ
+                </td>
             </tr>
 
-            <!-- THÀNH TIỀN -->
-
-            <tr class="table-success">
-
-                <th>THÀNH TIỀN</th>
-
+            <tr class="table-warning text-dark" th:if="${not #lists.isEmpty(serviceOrders)}">
+                <th colspan="2">🍔 CHI TIẾT DỊCH VỤ / GỌI MÓN ĐÃ SỬ DỤNG</th>
+            </tr>
+            <tr th:if="${not #lists.isEmpty(serviceOrders)}">
+                <th>Danh sách thực đơn</th>
                 <td>
-
-                    <b>
-
-                        <span th:text="${#numbers.formatDecimal(checkIn.totalPrice,1,0)}"></span>
-
-                        VNĐ
-
-                    </b>
-
+                    <div th:each="order : ${serviceOrders}" class="d-flex justify-content-between border-bottom py-1">
+                        <span th:text="${order.product != null ? order.product.name : 'Món ăn dịch vụ'} + ' (x' + ${order.quantity} + ')' "></span>
+                        <span class="text-secondary">
+                            <th:block th:text="${order.totalPrice != null} ? ${#numbers.formatDecimal(order.totalPrice,1,0)} + ' VNĐ' : '0 VNĐ'"></th:block>
+                        </span>
+                    </div>
+                    <div class="text-end fw-bold mt-2 text-danger">
+                        Tổng tiền dịch vụ: <span th:text="${#numbers.formatDecimal(totalServicePrice,1,0)}"></span> VNĐ
+                    </div>
                 </td>
-
             </tr>
 
+            <tr class="table-success fs-5">
+                <th class="text-success fw-bold">TỔNG TIỀN PHẢI THANH TOÁN</th>
+                <td class="text-danger fw-bold">
+                    <span th:text="${#numbers.formatDecimal(finalBillPrice,1,0)}"></span> VNĐ
+                </td>
+            </tr>
         </table>
 
-        <!-- FORM XÁC NHẬN -->
-
-        <form th:action="@{/billing/confirm}"
-              method="post">
-
-            <!-- ID -->
-
-            <input type="hidden"
-                   name="id"
-                   th:value="${checkIn.id}">
+        <form th:action="@{/billing/confirm}" method="post">
+            <input type="hidden" name="id" th:value="${checkIn.id}">
+            <input type="hidden" name="totalHours" th:value="${totalHours}">
+            <input type="hidden" name="finalPrice" th:value="${finalBillPrice}">
 
             <div class="d-flex justify-content-between mt-4">
-
-                <!-- HỦY -->
-
-                <a href="/rooms"
-                   class="btn btn-secondary">
-
-                    Hủy
-
+                <a href="/rooms" class="btn btn-secondary px-4 fw-bold">
+                    ↩️ Hủy bỏ & Quay lại
                 </a>
-
-                <!-- XÁC NHẬN -->
-
-                <button type="submit"
-                        class="btn btn-success">
-
-                    Xác nhận thanh toán
-
+                <button type="submit" class="btn btn-success px-4 fw-bold">
+                    ✅ Xác nhận & Thanh toán
                 </button>
-
             </div>
-
         </form>
 
     </div>
-
 </div>
 
 </body>
-
 </html>

@@ -8,7 +8,7 @@ public class UserSpecification {
     public static Specification<User> hasName(String name) {
         return (root, query, cb) -> {
             if (name == null || name.trim().isEmpty()) return null;
-            return cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%");
+            return cb.like(cb.lower(root.get("username")), "%" + name.toLowerCase() + "%");
         };
     }
 
@@ -22,7 +22,7 @@ public class UserSpecification {
     public static Specification<User> hasRole(String role) {
         return (root, query, cb) -> {
             if (role == null || role.trim().isEmpty()) return null;
-            return cb.equal(cb.lower(root.get("role")), role.toLowerCase());
+            return cb.equal(cb.lower(root.join("roles").get("roleName")), role.toLowerCase());
         };
     }
 }

@@ -19,7 +19,9 @@ target/
 # SPRING BOOT / ENV
 #######################################
 .env
-
+tt.md
+gt.md
+study.md
 # File config thật (KHÔNG push)
 src/main/resources/application.properties
 

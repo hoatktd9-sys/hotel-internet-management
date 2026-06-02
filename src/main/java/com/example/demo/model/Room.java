@@ -28,7 +28,7 @@ public class Room {
     private String roomName;
 
     @NotNull(message = "Giá phòng không được để trống")
-    @DecimalMin(value = "50000.0", message = "Giá phòng phải lớn hơn 50.000 VNĐ")
+    @DecimalMin(value = "10000.0", message = "Giá phòng phải lớn hơn 50.000 VNĐ")
     @Column(nullable = false)
     private Double price;
 
@@ -73,13 +73,15 @@ public class Room {
     private RoomStatus status;
 
     // ================= CHECK IN =================
-    // Bỏ CascadeType.ALL và orphanRemoval để tránh xóa nhầm lịch sử CheckIn khi xóa phòng
+    // Bỏ CascadeType.ALL và orphanRemoval để tránh xóa nhầm lịch sử CheckIn khi xóa
+    // phòng
     @OneToMany(mappedBy = "room")
     private List<CheckIn> checkIns = new ArrayList<>();
 
     @Transient
     public CheckIn getActiveCheckIn() {
-        if (checkIns == null) return null;
+        if (checkIns == null)
+            return null;
         for (CheckIn c : checkIns) {
             if ("ACTIVE".equals(c.getStatus())) {
                 return c;
@@ -90,7 +92,8 @@ public class Room {
 
     @Transient
     public CheckIn getReservedCheckIn() {
-        if (checkIns == null) return null;
+        if (checkIns == null)
+            return null;
         for (CheckIn c : checkIns) {
             if ("RESERVED".equals(c.getStatus())) {
                 return c;

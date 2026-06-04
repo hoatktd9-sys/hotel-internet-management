@@ -13,7 +13,7 @@ public class Customer {
 
     @NotBlank(message = "Họ tên không được để trống")
     @Size(min = 2, max = 50, message = "Họ tên phải từ 2 đến 50 ký tự")
-    @Pattern(regexp = "^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂĐÊÔƠưăâđêôơ\\s]+$", message = "Họ tên chỉ được chứa chữ cái và khoảng trắng")
+    @Pattern(regexp = "^[\\p{L}\\s]+$", message = "Tên chỉ được chứa chữ cái và khoảng trắng")
     private String fullName;
 
     @NotBlank(message = "CCCD không được để trống")
@@ -28,7 +28,8 @@ public class Customer {
     // ĐÃ THÊM: Quản lý trạng thái VIP (mặc định ban đầu là false)
     private boolean isVip = false;
 
-    // ĐÃ THÊM: Trạng thái tài khoản hoạt động hoặc bị khóa (mặc định ban đầu là true - hoạt động)
+    // ĐÃ THÊM: Trạng thái tài khoản hoạt động hoặc bị khóa (mặc định ban đầu là
+    // true - hoạt động)
     private boolean isActive = true;
 
     // ===== Getter Setter =====

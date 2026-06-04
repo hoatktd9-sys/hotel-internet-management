@@ -32,7 +32,7 @@
                 <th>Mốc thời gian</th>
                 <td>
                     Mở máy: <span th:text="${#temporals.format(checkIn.checkInTime, 'dd/MM/yyyy HH:mm:ss')}"></span> <br>
-                    Tính tiền: <span th:text="${#temporals.format(checkIn.checkOutTime, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                    Tính tiền: <span th:text="${#temporals.format(T(java.time.LocalDateTime).now(), 'dd/MM/yyyy HH:mm:ss')}"></span>
                 </td>
             </tr>
             <tr>
@@ -48,25 +48,29 @@
             <tr>
                 <th>Đơn giá phòng</th>
                 <td>
-                    <span th:text="${checkIn.room != null} ? ${#numbers.formatDecimal(checkIn.room.price,1,0)} : '0'"></span> VNĐ / giờ
+                    <span th:text="${checkIn.room != null} ? ${#numbers.formatDecimal(checkIn.room.price, 1, 'POINT', 0, 'COMMA')} : '0'"></span> VNĐ / giờ
                 </td>
             </tr>
             <tr>
                 <th>Tiền phòng tạm tính</th>
                 <td class="fw-bold text-dark">
-                    <span th:text="${#numbers.formatDecimal(roomTotalPrice,1,0)}"></span> VNĐ
+                    <span th:text="${#numbers.formatDecimal(roomTotalPrice, 1, 'POINT', 0, 'COMMA')}"></span> VNĐ
                 </td>
             </tr>
-
-            <tr th:if="${checkIn.overtimeHours != null && checkIn.overtimeHours > 0}" class="table-warning">
+ 
+            <tr th:if="${totalHours > (checkIn.expectedHours != null ? checkIn.expectedHours : 0.0)}" class="table-warning">
                 <th class="text-danger">Số giờ quá giờ (Overtime)</th>
-                <td class="text-danger fw-bold"><span th:text="${#numbers.formatDecimal(checkIn.overtimeHours,1,2)}"></span> giờ</td>
+                <td class="text-danger fw-bold">
+                    <span th:text="${#numbers.formatDecimal(totalHours - checkIn.expectedHours,1,2)}"></span> giờ
+                </td>
             </tr>
-            <tr th:if="${checkIn.overtimeCharge != null && checkIn.overtimeCharge > 0}" class="table-warning">
+            <tr th:if="${totalHours > (checkIn.expectedHours != null ? checkIn.expectedHours : 0.0)}" class="table-warning">
                 <th class="text-danger">Phụ phí quá giờ (1.5x đơn giá)</th>
-                <td class="text-danger fw-bold"><span th:text="${#numbers.formatDecimal(checkIn.overtimeCharge,1,0)}"></span> VNĐ</td>
+                <td class="text-danger fw-bold">
+                    <span th:text="${#numbers.formatDecimal((totalHours - checkIn.expectedHours) * checkIn.room.price * 1.5, 1, 'POINT', 0, 'COMMA')}"></span> VNĐ
+                </td>
             </tr>
-
+ 
             <tr class="table-warning text-dark" th:if="${not #lists.isEmpty(serviceOrders)}">
                 <th colspan="2">🍔 CHI TIẾT DỊCH VỤ / GỌI MÓN ĐÃ SỬ DỤNG</th>
             </tr>
@@ -76,11 +80,11 @@
                     <div th:each="order : ${serviceOrders}" class="d-flex justify-content-between border-bottom py-1">
                         <span th:text="${order.product != null ? order.product.name : 'Món ăn dịch vụ'} + ' (x' + ${order.quantity} + ')' "></span>
                         <span class="text-secondary">
-                            <th:block th:text="${order.totalPrice != null} ? ${#numbers.formatDecimal(order.totalPrice,1,0)} + ' VNĐ' : '0 VNĐ'"></th:block>
+                            <th:block th:text="${order.totalPrice != null} ? ${#numbers.formatDecimal(order.totalPrice, 1, 'POINT', 0, 'COMMA')} + ' VNĐ' : '0 VNĐ'"></th:block>
                         </span>
                     </div>
                     <div class="text-end fw-bold mt-2 text-danger">
-                        Tổng tiền dịch vụ: <span th:text="${#numbers.formatDecimal(totalServicePrice,1,0)}"></span> VNĐ
+                        Tổng tiền dịch vụ: <span th:text="${#numbers.formatDecimal(totalServicePrice, 1, 'POINT', 0, 'COMMA')}"></span> VNĐ
                     </div>
                 </td>
             </tr>
@@ -96,14 +100,32 @@
                     <input type="number" id="surchargeInput" name="surcharge" value="0" min="0" step="1000" class="form-control" placeholder="Nhập số tiền phụ thu phát sinh...">
                     <span class="input-group-text">VNĐ</span>
                 </div>
-                <small class="text-muted">Ví dụ: Tiền đền bù làm hỏng đồ phòng, dịch vụ giặt là bên ngoài,...</small>
+                <small class="text-muted">Ví dụ: Tiền đền bù làm hỏng đồ phòng, dịch vụ phát sinh ngoài,...</small>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold text-dark d-block">💳 Phương thức thanh toán</label>
+                <div class="d-flex gap-4 p-3 bg-white border rounded">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="methodCash" value="CASH" checked>
+                        <label class="form-check-label fw-bold text-success" for="methodCash">
+                            💵 Tiền mặt (Cash)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="methodTransfer" value="TRANSFER">
+                        <label class="form-check-label fw-bold text-primary" for="methodTransfer">
+                            🏦 Chuyển khoản (Transfer)
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div class="mb-4 bg-white p-3 border rounded">
                 <h4 class="m-0 d-flex justify-content-between text-dark fw-bold">
                     <span>TỔNG TIỀN PHẢI THANH TOÁN:</span>
                     <span class="text-danger fw-bold" id="finalPriceSpan">
-                        <span th:text="${#numbers.formatDecimal(finalBillPrice,1,0)}"></span> VNĐ
+                        <span th:text="${#numbers.formatDecimal(finalBillPrice, 1, 'POINT', 0, 'COMMA')}"></span> VNĐ
                     </span>
                 </h4>
             </div>
@@ -123,7 +145,7 @@
 
 <script th:inline="javascript">
     document.addEventListener("DOMContentLoaded", function() {
-        /*[[th:inline="true"]]*/
+        // Fix cú pháp inline Thymeleaf chuẩn cấu trúc Object để tránh lỗi biên dịch text JavaScript
         const basePrice = /*[[${finalBillPrice}]]*/ 0;
         const surchargeInput = document.getElementById("surchargeInput");
         const finalPriceSpan = document.getElementById("finalPriceSpan");

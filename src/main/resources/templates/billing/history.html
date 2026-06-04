@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Lịch sử thanh toán hóa đơn')}"></head>
+<body class="bg-light">
+
+<div class="container mt-4">
+    <div th:replace="~{fragments/layout :: navbar('Lịch sử hóa đơn')}"></div>
+
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-clock-history"></i> QUẢN LÝ LỊCH SỬ HÓA ĐƠN</h2>
+        <a href="/rooms" class="btn btn-secondary shadow-sm"><i class="bi bi-arrow-left"></i> Quay lại sơ đồ phòng</a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 bg-primary text-white p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-uppercase mb-1 small text-white-50">Tổng doanh thu hệ thống</h6>
+                        <h2 class="fw-bold m-0" th:text="${#numbers.formatDecimal(totalRevenue, 1, 'POINT', 0, 'COMMA')} + ' VNĐ'">0 VNĐ</h2>
+                    </div>
+                    <div class="fs-1 opacity-50"><i class="bi bi-currency-dollar"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 bg-success text-white p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-uppercase mb-1 small text-white-50">Tổng số lượng hóa đơn</h6>
+                        <h2 class="fw-bold m-0" th:text="${#lists.size(bills)} + ' giao dịch'">0</h2>
+                    </div>
+                    <div class="fs-1 opacity-50"><i class="bi bi-receipt"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm p-3 border-0 rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle bg-white m-0">
+                <thead class="table-dark">
+                <tr>
+                    <th class="py-3">Mã hóa đơn</th>
+                    <th class="py-3">Phòng</th>
+                    <th class="py-3">Khách hàng</th>
+                    <th class="py-3">Thời gian thanh toán</th>
+                    <th class="py-3">Phương thức</th>
+                    <th class="py-3 text-end">Tổng tiền</th>
+                    <th class="py-3 text-center">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="bill : ${bills}" th:classappend="${bill.status == 'REFUNDED'} ? 'table-danger text-muted' : ''">
+                    <td class="fw-bold text-primary" th:text="${bill.billCode}">HD-0000</td>
+                    <td class="fw-bold text-success" th:text="${bill.checkIn.room != null ? bill.checkIn.room.roomName : 'N/A'}">101</td>
+                    <td th:text="${bill.checkIn.customer != null ? bill.checkIn.customer.fullName : 'Khách vãng lai'}">Nguyễn Văn A</td>
+                    <td th:text="${#temporals.format(bill.paymentTime, 'dd/MM/yyyy HH:mm:ss')}">01/01/2026</td>
+                    <td>
+                        <div th:if="${bill.status != 'REFUNDED'}">
+                            <span th:if="${bill.paymentMethod == 'CASH'}" class="badge bg-success-subtle text-success border border-success px-2 py-1">💵 Tiền mặt</span>
+                            <span th:if="${bill.paymentMethod == 'TRANSFER'}" class="badge bg-primary-subtle text-primary border border-primary px-2 py-1">🏦 Chuyển khoản</span>
+                        </div>
+                        <div th:if="${bill.status == 'REFUNDED'}">
+                            <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-arrow-counterclockwise"></i> Đã hoàn tiền</span>
+                        </div>
+                    </td>
+                    <td class="text-end fw-bold"
+                        th:classappend="${bill.status == 'REFUNDED'} ? 'text-decoration-line-through text-secondary' : 'text-danger'"
+                        th:text="${bill.status == 'REFUNDED'} ? '-' + ${#numbers.formatDecimal(bill.finalAmount, 1, 'POINT', 0, 'COMMA')} + ' đ' : ${#numbers.formatDecimal(bill.finalAmount, 1, 'POINT', 0, 'COMMA')} + ' đ'">0 đ</td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            <a th:href="@{/billing/invoice/{id}(id=${bill.id})}" class="btn btn-outline-secondary btn-sm rounded-2">
+                                <i class="bi bi-eye"></i> Xem / In lại
+                            </a>
+
+                            <form sec:authorize="hasRole('ADMIN')" th:if="${bill.status != 'REFUNDED'}"
+                                  th:action="@{/billing/refund/{id}(id=${bill.id})}" method="post" class="m-0"
+                                  onsubmit="return confirm('XÁC NHẬN HOÀN TIỀN VÀ TRẢ PHÒNG?\nHệ thống sẽ hoàn trả số tiền này, trừ vào doanh thu hệ thống và đưa phòng về trạng thái DỌN DẸP!');">
+                                <button type="submit" class="btn btn-danger btn-sm fw-bold rounded-2">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Hoàn tiền
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(bills)}">
+                    <td colspan="7" class="text-center text-muted py-4">Chưa có giao dịch hóa đơn nào được ghi nhận trên hệ thống.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

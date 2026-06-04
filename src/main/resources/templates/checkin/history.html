@@ -25,60 +25,73 @@
                     <th>Giờ trả phòng</th>
                     <th>Số giờ đã dùng</th>
                     <th>Trạng thái</th>
+                    <th style="width: 150px;" class="text-center">Hành động</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="c : ${list}">
-                    <!-- ID -->
                     <td class="fw-bold text-center" th:text="${c.id}"></td>
 
-                    <!-- KHÁCH HÀNG -->
                     <td class="fw-bold text-primary">
                         <span th:text="${c.customer != null ? c.customer.fullName : 'Khách đã xóa'}"></span>
                     </td>
 
-                    <!-- SỐ CCCD -->
                     <td class="fw-bold text-secondary">
                         <span th:text="${c.customer != null ? c.customer.identityNumber : 'N/A'}"></span>
                     </td>
 
-                    <!-- PHÒNG MÁY -->
                     <td class="fw-bold text-dark">
                         <span th:text="${c.room != null ? c.room.roomName : 'Phòng đã xóa'}"></span>
                     </td>
 
-                    <!-- CHECKIN TIME -->
                     <td th:text="${#temporals.format(c.checkInTime, 'dd-MM-yyyy HH:mm:ss')}"></td>
 
-                    <!-- CHECKOUT TIME -->
                     <td>
                         <span th:if="${c.checkOutTime != null}" th:text="${#temporals.format(c.checkOutTime, 'dd-MM-yyyy HH:mm:ss')}"></span>
                         <span th:if="${c.checkOutTime == null}" class="badge bg-warning text-dark"><i class="bi bi-play-circle"></i> Đang hoạt động</span>
                     </td>
 
-                    <!-- TỔNG GIỜ -->
                     <td class="text-center fw-bold">
                         <span th:if="${c.totalHours != null}" th:text="${#numbers.formatDecimal(c.totalHours,1,2)} + ' giờ'"></span>
                         <span th:if="${c.totalHours == null}">---</span>
                     </td>
 
-                    <!-- TRẠNG THÁI STATUS BADGE -->
                     <td>
                         <span th:if="${c.status == 'ACTIVE'}" class="badge bg-primary px-3 py-2">Đang sử dụng</span>
                         <span th:if="${c.status == 'RESERVED'}" class="badge bg-warning text-dark px-3 py-2">Đã đặt trước</span>
                         <span th:if="${c.status == 'COMPLETED'}" class="badge bg-success px-3 py-2">Đã thanh toán</span>
                         <span th:if="${c.status == 'CANCELLED'}" class="badge bg-danger px-3 py-2">Đã hủy bỏ</span>
                     </td>
+
+                    <td class="text-center">
+                        <div th:if="${c.status == 'COMPLETED' or c.status == 'CHECKED_OUT'}">
+                            <a th:href="@{/billing/invoice/by-checkin/{id}(id=${c.id})}" class="btn btn-outline-success btn-sm fw-bold">
+                                <i class="bi bi-printer"></i> Xem &amp; In hóa đơn
+                            </a>
+                        </div>
+                        <span th:unless="${c.status == 'COMPLETED' or c.status == 'CHECKED_OUT'}" class="text-muted">---</span>
+                    </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(list)}">
-                    <td colspan="8" class="text-center text-muted py-4"><i class="bi bi-folder-x" style="font-size: 2rem;"></i><br>Chưa có dữ liệu lịch sử phiếu thuê nào.</td>
-                </tr>
-                </tbody>
+                    <td colspan="9" class="text-center text-muted py-4"><i class="bi bi-folder-x" style="font-size: 2rem;"></i><br>Chưa có dữ liệu lịch sử phiếu thuê nào.</td>
             </table>
         </div>
+
+        <!-- Phân trang -->
+        <nav aria-label="Page navigation" th:if="${totalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link" th:href="@{/checkin/history(page=${currentPage - 1})}">Trước</a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${currentPage == i} ? 'active'">
+                    <a class="page-link" th:href="@{/checkin/history(page=${i})}" th:text="${i + 1}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/checkin/history(page=${currentPage + 1})}">Sau</a>
+                </li>
+            </ul>
+        </nav>
     </div>
 </div>
-
-
 </body>
 </html>

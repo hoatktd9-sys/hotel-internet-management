@@ -1,6 +1,12 @@
 package com.example.demo;
 
 import com.example.demo.model.Permission;
+import com.example.demo.model.CheckIn;
+import com.example.demo.model.Bill;
+import com.example.demo.repository.BillRepository;
+import com.example.demo.repository.CheckInRepository;
+import java.time.LocalDateTime;
+import java.time.Duration;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.service.PermissionService;
@@ -20,12 +26,21 @@ public class DataSeeder implements CommandLineRunner {
     private final RoleService roleService;
     private final UserService userService;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final BillRepository billRepository;
+    private final CheckInRepository checkInRepository;
 
-    public DataSeeder(PermissionService permissionService, RoleService roleService, UserService userService, org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+    public DataSeeder(PermissionService permissionService,
+                      RoleService roleService,
+                      UserService userService,
+                      org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
+                      BillRepository billRepository,
+                      CheckInRepository checkInRepository) {
         this.permissionService = permissionService;
         this.roleService = roleService;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.billRepository = billRepository;
+        this.checkInRepository = checkInRepository;
     }
     @Transactional
     public void run(String... args) throws Exception {
@@ -92,9 +107,93 @@ public class DataSeeder implements CommandLineRunner {
             userService.save(adminUser);
             System.out.println(">>> Đã cập nhật mật khẩu mã hóa và quyền ADMIN cho tài khoản admin! <<<");
         }
+        
+        repairExistingBills();
     }
 
-
+    @Transactional
+    public void repairExistingBills() {
+        System.out.println(">>> Bắt đầu rà soát và phục hồi dữ liệu hóa đơn/thống kê bị thiếu... <<<");
+        java.util.List<Bill> bills = billRepository.findAll();
+        int repairedCount = 0;
+        for (Bill bill : bills) {
+            boolean checkInUpdated = false;
+            CheckIn checkIn = bill.getCheckIn();
+            if (checkIn != null) {
+                // 1. Phục hồi các trường thông tin trên CheckIn
+                LocalDateTime ciTime = checkIn.getCheckInTime();
+                LocalDateTime coTime = checkIn.getCheckOutTime();
+                if (coTime == null) {
+                    coTime = bill.getPaymentTime() != null ? bill.getPaymentTime() : LocalDateTime.now();
+                    checkIn.setCheckOutTime(coTime);
+                    checkInUpdated = true;
+                }
+                
+                double roomPrice = (checkIn.getRoom() != null) ? checkIn.getRoom().getPrice() : 0.0;
+                double expected = checkIn.getExpectedHours() != null ? checkIn.getExpectedHours() : 0.0;
+                
+                double totalHours = checkIn.getTotalHours() != null ? checkIn.getTotalHours() : 0.0;
+                if (totalHours == 0.0 && ciTime != null && coTime != null) {
+                    totalHours = Math.max(1.0, Duration.between(ciTime, coTime).toMinutes() / 60.0);
+                    checkIn.setTotalHours(totalHours);
+                    checkInUpdated = true;
+                }
+                
+                double roomTotal = (totalHours > expected && expected > 0.0) ? (expected * roomPrice) : (totalHours * roomPrice);
+                double overtime = 0.0;
+                if (checkIn.getOvertimeHours() == null || checkIn.getOvertimeHours() == 0.0) {
+                    if (totalHours > expected && expected > 0.0) {
+                        checkIn.setOvertimeHours(totalHours - expected);
+                        overtime = (totalHours - expected) * roomPrice * 1.5;
+                        checkIn.setOvertimeCharge(overtime);
+                        checkInUpdated = true;
+                    }
+                } else {
+                    overtime = checkIn.getOvertimeCharge() != null ? checkIn.getOvertimeCharge() : 0.0;
+                }
+                
+                if (checkIn.getSurcharge() == null) {
+                    checkIn.setSurcharge(0.0);
+                    checkInUpdated = true;
+                }
+                
+                if (checkInUpdated) {
+                    checkInRepository.save(checkIn);
+                }
+                
+                // 2. Phục hồi các trường thông tin thống kê trên Bill
+                boolean billUpdated = false;
+                if (bill.getRoomPriceReal() == null) {
+                    bill.setRoomPriceReal(roomTotal);
+                    billUpdated = true;
+                }
+                if (bill.getOvertimePriceReal() == null) {
+                    bill.setOvertimePriceReal(overtime);
+                    billUpdated = true;
+                }
+                if (bill.getSurchargeReal() == null) {
+                    bill.setSurchargeReal(checkIn.getSurcharge() != null ? checkIn.getSurcharge() : 0.0);
+                    billUpdated = true;
+                }
+                if (bill.getServicePriceReal() == null) {
+                    double finalAmt = bill.getFinalAmount() != null ? bill.getFinalAmount() : 0.0;
+                    double surchargeVal = bill.getSurchargeReal() != null ? bill.getSurchargeReal() : 0.0;
+                    double servicePriceVal = finalAmt - roomTotal - overtime - surchargeVal;
+                    if (servicePriceVal < 0.0) {
+                        servicePriceVal = 0.0;
+                    }
+                    bill.setServicePriceReal(servicePriceVal);
+                    billUpdated = true;
+                }
+                
+                if (billUpdated) {
+                    billRepository.save(bill);
+                    repairedCount++;
+                }
+            }
+        }
+        System.out.println(">>> Đã hoàn tất sửa đổi/phục hồi " + repairedCount + " hóa đơn cũ thành công! <<<");
+    }
 
     public Permission createPermissionIfNotFound(String permissionName, String description) {
         return permissionService.findByName(permissionName).orElseGet(() -> {

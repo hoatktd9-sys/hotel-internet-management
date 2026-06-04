@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Thống kê tần suất sử dụng phòng')}"></head>
+<body class="bg-light">
+
+<div class="container-fluid mt-4">
+    <!-- NAVBAR -->
+    <div th:replace="~{fragments/layout :: navbar('Báo cáo & Thống kê > Tần suất sử dụng phòng')}"></div>
+
+    <!-- EXPORT ACTION BAR -->
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-3 shadow-sm">
+        <h5 class="fw-bold text-dark m-0"><i class="bi bi-building-fill-gear text-primary"></i> Hiệu suất hoạt động của các phòng</h5>
+        <a href="/admin/reports/export?type=rooms" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-excel"></i> Xuất Excel báo cáo</a>
+    </div>
+
+    <!-- ROOM POPULARITY TABLE -->
+    <div class="card border-0 shadow-sm p-4 rounded-3 bg-white">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 80px;">Hạng</th>
+                        <th>Tên Phòng</th>
+                        <th>Loại Phòng</th>
+                        <th class="text-center">Số Lượt Thuê</th>
+                        <th class="text-center">Phổ biến (Biểu đồ lượt thuê)</th>
+                        <th class="text-end">Tổng Thời Lượng Sử Dụng</th>
+                        <th class="text-end">Doanh Thu Đóng Góp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r, iterStat : ${roomReport}">
+                        <td class="fw-bold">
+                            <span th:if="${iterStat.count == 1}" class="badge bg-warning text-dark fs-6"><i class="bi bi-trophy-fill"></i> 1</span>
+                            <span th:if="${iterStat.count == 2}" class="badge bg-secondary text-white fs-6">2</span>
+                            <span th:if="${iterStat.count == 3}" class="badge bg-danger text-white fs-6">3</span>
+                            <span th:if="${iterStat.count > 3}" th:text="${iterStat.count}" class="text-muted ps-2"></span>
+                        </td>
+                        <td th:text="${r.roomName}" class="fw-bold text-dark">Phòng 101</td>
+                        <td th:text="${r.roomType}">Standard</td>
+                        <td th:text="${r.checkInCount} + ' lượt'" class="fw-bold text-center">0 lượt</td>
+                        <td>
+                            <!-- Fake progress bar representing popularity -->
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     th:style="'width: ' + ${r.checkInCount * 10 > 100 ? 100 : r.checkInCount * 10} + '%'" 
+                                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(r.totalHours, 1, 1)} + ' giờ'" class="text-end fw-bold">0.0 giờ</td>
+                        <td th:text="${#numbers.formatDecimal(r.totalRevenue, 1, 'POINT', 0, 'COMMA')} + 'đ'" class="text-end text-success fw-bold">0đ</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(roomReport)}">
+                        <td colspan="7" class="text-center text-muted py-4">Chưa có dữ liệu thuê phòng nào.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

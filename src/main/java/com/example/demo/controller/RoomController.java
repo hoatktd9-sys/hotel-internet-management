@@ -280,8 +280,23 @@ public class RoomController {
 
     @ModelAttribute
     public void addCommonAttributes(Model model) {
-        model.addAttribute("availableRooms", roomService.getAll().stream()
+        java.util.List<Room> allRooms = roomService.getAll();
+        model.addAttribute("availableRooms", allRooms.stream()
                 .filter(r -> r.getStatus() != null && r.getStatus() == RoomStatus.AVAILABLE)
                 .collect(Collectors.toList()));
+
+        long availableCount = allRooms.stream().filter(r -> r.getStatus() == RoomStatus.AVAILABLE).count();
+        long occupiedCount = allRooms.stream().filter(r -> r.getStatus() == RoomStatus.OCCUPIED).count();
+        long cleaningCount = allRooms.stream().filter(r -> r.getStatus() == RoomStatus.CLEANING).count();
+        long maintenanceCount = allRooms.stream().filter(r -> r.getStatus() == RoomStatus.MAINTENANCE).count();
+        long reservedCount = allRooms.stream().filter(r -> r.getStatus() == RoomStatus.RESERVED).count();
+        long allCount = allRooms.size();
+
+        model.addAttribute("availableCount", availableCount);
+        model.addAttribute("occupiedCount", occupiedCount);
+        model.addAttribute("cleaningCount", cleaningCount);
+        model.addAttribute("maintenanceCount", maintenanceCount);
+        model.addAttribute("reservedCount", reservedCount);
+        model.addAttribute("allCount", allCount);
     }
 }

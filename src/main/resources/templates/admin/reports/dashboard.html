@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Dashboard Tổng Quan Báo Cáo')}"></head>
+<body class="bg-light">
+
+<div class="container-fluid mt-4">
+    <!-- NAVBAR -->
+    <div th:replace="~{fragments/layout :: navbar('Báo cáo & Thống kê > Dashboard')}"></div>
+
+    <!-- STATS CARDS -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white p-4 h-100 rounded-3 position-relative overflow-hidden">
+                <div class="position-absolute end-0 bottom-0 opacity-10" style="font-size: 6rem; transform: translate(15%, 15%);">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+                <h6 class="text-uppercase fw-bold text-white-50 mb-1">Doanh thu hôm nay</h6>
+                <h2 class="fw-extrabold mb-0" th:text="${#numbers.formatDecimal(todayRevenue, 1, 'POINT', 0, 'COMMA')} + 'đ'">0đ</h2>
+                <small class="text-white-50"><i class="bi bi-clock-history"></i> Cập nhật thời gian thực</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-success text-white p-4 h-100 rounded-3 position-relative overflow-hidden">
+                <div class="position-absolute end-0 bottom-0 opacity-10" style="font-size: 6rem; transform: translate(15%, 15%);">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </div>
+                <h6 class="text-uppercase fw-bold text-white-50 mb-1">Doanh thu tháng này</h6>
+                <h2 class="fw-extrabold mb-0" th:text="${#numbers.formatDecimal(monthRevenue, 1, 'POINT', 0, 'COMMA')} + 'đ'">0đ</h2>
+                <small class="text-white-50"><i class="bi bi-calendar-month"></i> Tháng hiện tại</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-info text-white p-4 h-100 rounded-3 position-relative overflow-hidden">
+                <div class="position-absolute end-0 bottom-0 opacity-10" style="font-size: 6rem; transform: translate(15%, 15%);">
+                    <i class="bi bi-door-open-fill"></i>
+                </div>
+                <h6 class="text-uppercase fw-bold text-white-50 mb-1">Tổng số phòng</h6>
+                <h2 class="fw-extrabold mb-0" th:text="${totalRooms}">0</h2>
+                <small class="text-white-50">Hoạt động trong hệ thống</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-warning text-dark p-4 h-100 rounded-3 position-relative overflow-hidden">
+                <div class="position-absolute end-0 bottom-0 opacity-10" style="font-size: 6rem; transform: translate(15%, 15%);">
+                    <i class="bi bi-person-hearts"></i>
+                </div>
+                <h6 class="text-uppercase fw-bold text-dark-50 mb-1">Đang hoạt động</h6>
+                <h2 class="fw-extrabold mb-0" th:text="${occupiedRooms} + ' phòng'">0 phòng</h2>
+                <small class="text-dark-50">Khách đang sử dụng máy</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS & SUMMARY ROW -->
+    <div class="row g-4 mb-4">
+        <!-- Chart Room Status -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-4 rounded-3 h-100 bg-white">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-pie-chart-fill text-danger me-2"></i> Tỷ lệ trạng thái phòng</h5>
+                <div style="height: 300px; display: flex; justify-content: center; align-items: center;">
+                    <canvas id="roomStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room status detail counts -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-4 rounded-3 h-100 bg-white">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-bar-chart-fill text-primary me-2"></i> Chi tiết trạng thái phòng</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <span class="badge bg-success rounded-circle p-2 me-2"><i class="bi bi-check-lg text-white"></i></span>
+                            <span class="fw-bold">Phòng trống</span>
+                        </div>
+                        <span class="badge bg-success rounded-pill fs-6 px-3" th:text="${availableRooms}">0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <span class="badge bg-danger rounded-circle p-2 me-2"><i class="bi bi-person-fill text-white"></i></span>
+                            <span class="fw-bold">Đang sử dụng</span>
+                        </div>
+                        <span class="badge bg-danger rounded-pill fs-6 px-3" th:text="${occupiedRooms}">0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <span class="badge bg-warning rounded-circle p-2 me-2"><i class="bi bi-bookmark-star-fill text-dark"></i></span>
+                            <span class="fw-bold text-dark">Đã đặt trước</span>
+                        </div>
+                        <span class="badge bg-warning text-dark rounded-pill fs-6 px-3" th:text="${reservedRooms}">0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <span class="badge bg-info rounded-circle p-2 me-2"><i class="bi bi-stars text-white"></i></span>
+                            <span class="fw-bold">Đang dọn dẹp</span>
+                        </div>
+                        <span class="badge bg-info rounded-pill fs-6 px-3" th:text="${cleaningRooms}">0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <span class="badge bg-secondary rounded-circle p-2 me-2"><i class="bi bi-wrench text-white"></i></span>
+                            <span class="fw-bold">Bảo trì</span>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill fs-6 px-3" th:text="${maintenanceRooms}">0</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLES ROW -->
+    <div class="row g-4">
+        <!-- Top Rooms -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-4 rounded-3 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i> Top 5 phòng sử dụng nhiều</h5>
+                    <a href="/admin/reports/rooms" class="btn btn-outline-primary btn-sm fw-bold">Xem tất cả</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tên phòng</th>
+                                <th>Lượt thuê</th>
+                                <th>Thời lượng</th>
+                                <th>Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r : ${topRooms}">
+                                <td th:text="${r.roomName}" class="fw-bold"></td>
+                                <td th:text="${r.checkInCount} + ' lượt'"></td>
+                                <td th:text="${#numbers.formatDecimal(r.totalHours, 1, 1)} + ' giờ'"></td>
+                                <td th:text="${#numbers.formatDecimal(r.totalRevenue, 1, 'POINT', 0, 'COMMA')} + 'đ'" class="text-success fw-bold"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(topRooms)}">
+                                <td colspan="4" class="text-center text-muted">Chưa có dữ liệu</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Products -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-4 rounded-3 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-cart-check-fill text-success me-2"></i> Top 5 sản phẩm bán chạy</h5>
+                    <a href="/admin/reports/products" class="btn btn-outline-success btn-sm fw-bold">Xem tất cả</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Danh mục</th>
+                                <th>Số lượng bán</th>
+                                <th>Tổng doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${topProducts}">
+                                <td th:text="${p.productName}" class="fw-bold text-secondary"></td>
+                                <td th:text="${p.categoryName}"></td>
+                                <td th:text="${p.quantitySold} + ' phần'" class="fw-bold"></td>
+                                <td th:text="${#numbers.formatDecimal(p.totalRevenue, 1, 'POINT', 0, 'COMMA')} + 'đ'" class="text-danger fw-bold"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(topProducts)}">
+                                <td colspan="4" class="text-center text-muted">Chưa có dữ liệu</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('roomStatusChart').getContext('2d');
+        const available = /*[[${availableRooms}]]*/ 0;
+        const occupied = /*[[${occupiedRooms}]]*/ 0;
+        const reserved = /*[[${reservedRooms}]]*/ 0;
+        const cleaning = /*[[${cleaningRooms}]]*/ 0;
+        const maintenance = /*[[${maintenanceRooms}]]*/ 0;
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Trống', 'Đang sử dụng', 'Đã đặt trước', 'Đang dọn dẹp', 'Bảo trì'],
+                datasets: [{
+                    data: [available, occupied, reserved, cleaning, maintenance],
+                    backgroundColor: [
+                        '#2ec4b6', // available
+                        '#e63946', // occupied
+                        '#ffb703', // reserved
+                        '#a2d2ff', // cleaning
+                        '#6c757d'  // maintenance
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

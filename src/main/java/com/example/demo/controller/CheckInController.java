@@ -1,9 +1,11 @@
 package com.example.demo.controller;
 
 import com.example.demo.enumtype.RoomStatus;
+import com.example.demo.model.Bill;
 import com.example.demo.model.CheckIn;
 import com.example.demo.model.Room;
 import com.example.demo.model.RoomServiceOrder;
+import com.example.demo.repository.BillRepository;
 import com.example.demo.repository.RoomServiceOrderRepository;
 import com.example.demo.service.CheckInService;
 import com.example.demo.service.CustomerService;
@@ -18,8 +20,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Controller
@@ -29,25 +32,33 @@ public class CheckInController {
     private final CustomerService customerService;
     private final RoomService roomService;
     private final RoomServiceOrderRepository roomServiceOrderRepository;
+    private final BillRepository billRepository;
 
     public CheckInController(
             CheckInService checkInService,
             CustomerService customerService,
             RoomService roomService,
-            RoomServiceOrderRepository roomServiceOrderRepository
-    ) {
+            RoomServiceOrderRepository roomServiceOrderRepository,
+            BillRepository billRepository) {
         this.checkInService = checkInService;
         this.customerService = customerService;
         this.roomService = roomService;
         this.roomServiceOrderRepository = roomServiceOrderRepository;
+        this.billRepository = billRepository;
     }
 
-    // ===== HIỂN THỊ FORM CHECK-IN (TẠO PHIẾU THUÊ TRỰC TIẾP) =====
+    // ===== HÀM ĐIỀU HƯỚNG NÚT TẠO PHIẾU THUÊ =====
     @GetMapping("/checkin")
-    public String checkInPage(
-            @RequestParam(required = false) Long roomId,
-            Model model
-    ){
+    public String redirectCheckIn(@RequestParam(required = false) Long roomId) {
+        if (roomId != null) {
+            return "redirect:/checkin/create?roomId=" + roomId;
+        }
+        return "redirect:/checkin/create";
+    }
+
+    // ===== HIỂN THỊ FORM CHECK-IN TRỰC TIẾP =====
+    @GetMapping("/checkin/create")
+    public String checkInPage(Model model, @RequestParam(required = false) Long roomId) {
         model.addAttribute("customers", customerService.findAll());
         model.addAttribute("rooms", roomService.getAll().stream()
                 .filter(r -> r.getStatus() == RoomStatus.AVAILABLE)
@@ -56,14 +67,13 @@ public class CheckInController {
         return "checkin/create";
     }
 
-    // ===== LƯU PHIẾU THUÊ (CHECK-IN TRỰC TIẾP) =====
+    // ===== LƯU PHIẾU THUÊ TRỰC TIẾP =====
     @PostMapping("/checkin/save")
     public String saveCheckIn(
             @RequestParam Long customerId,
             @RequestParam Long roomId,
             @RequestParam(defaultValue = "1.0") Double expectedHours,
-            RedirectAttributes redirectAttributes
-    ){
+            RedirectAttributes redirectAttributes) {
         Room room = roomService.findById(roomId);
         if (room == null || room.getStatus() != RoomStatus.AVAILABLE) {
             redirectAttributes.addFlashAttribute("error", "Phòng không khả dụng để check-in!");
@@ -77,20 +87,16 @@ public class CheckInController {
         checkIn.setExpectedHours(expectedHours);
         checkIn.setStatus("ACTIVE");
 
-        // Đổi trạng thái phòng sang OCCUPIED
         roomService.updateStatus(roomId, RoomStatus.OCCUPIED);
         checkInService.save(checkIn);
 
         redirectAttributes.addFlashAttribute("successMessage", "Tạo phiếu thuê và nhận phòng thành công!");
-        return "redirect:/rooms";
+        return "redirect:/checkin/history";
     }
 
-    // ===== HIỂN THỊ FORM ĐẶT TRƯỚC PHÒNG (RESERVATION) =====
+    // ===== HIỂN THỊ FORM ĐẶT TRƯỚC PHÒNG (PRE-BOOK) =====
     @GetMapping("/reserve")
-    public String reservePage(
-            @RequestParam(required = false) Long roomId,
-            Model model
-    ) {
+    public String reservePage(@RequestParam(required = false) Long roomId, Model model) {
         model.addAttribute("customers", customerService.findAll());
         model.addAttribute("rooms", roomService.getAll().stream()
                 .filter(r -> r.getStatus() == RoomStatus.AVAILABLE)
@@ -104,284 +110,272 @@ public class CheckInController {
     public String saveReservation(
             @RequestParam Long customerId,
             @RequestParam Long roomId,
-            @RequestParam String checkInTimeStr,
+            @RequestParam(value = "checkInTime", required = false) String checkInTime,
+            @RequestParam(value = "checkInTimeStr", required = false) String checkInTimeStr,
             @RequestParam(defaultValue = "1.0") Double expectedHours,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         Room room = roomService.findById(roomId);
         if (room == null || room.getStatus() != RoomStatus.AVAILABLE) {
             redirectAttributes.addFlashAttribute("error", "Phòng không khả dụng để đặt trước!");
             return "redirect:/rooms";
         }
 
-        LocalDateTime checkInTime = LocalDateTime.parse(checkInTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        String rawDateTimeStr = (checkInTime != null && !checkInTime.trim().isEmpty()) ? checkInTime : checkInTimeStr;
+        LocalDateTime finalCheckInTime = null;
+        if (rawDateTimeStr != null && !rawDateTimeStr.trim().isEmpty()) {
+            try {
+                if (rawDateTimeStr.contains("T")) {
+                    finalCheckInTime = LocalDateTime.parse(rawDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                } else {
+                    String cleanedStr = rawDateTimeStr.replace("CH", "PM").replace("SA", "AM").trim();
+                    DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a",
+                            java.util.Locale.ENGLISH);
+                    finalCheckInTime = LocalDateTime.parse(cleanedStr, customFormatter);
+                }
+            } catch (Exception e) {
+                finalCheckInTime = LocalDateTime.now();
+            }
+        } else {
+            finalCheckInTime = LocalDateTime.now();
+        }
 
         CheckIn checkIn = new CheckIn();
         checkIn.setCustomer(customerService.findById(customerId));
         checkIn.setRoom(room);
-        checkIn.setCheckInTime(checkInTime); // Dự kiến nhận phòng
+        checkIn.setCheckInTime(finalCheckInTime);
         checkIn.setExpectedHours(expectedHours);
         checkIn.setStatus("RESERVED");
 
-        // Đổi trạng thái phòng sang RESERVED
-        roomService.updateStatus(roomId, RoomStatus.RESERVED);
+        roomService.updateStatus(roomId, RoomStatus.AVAILABLE);
         checkInService.save(checkIn);
 
         redirectAttributes.addFlashAttribute("successMessage", "Đặt trước phòng thành công!");
         return "redirect:/rooms";
     }
 
-    // ===== CHECK-IN KHÁCH ĐÃ ĐẶT TRƯỚC (ACTIVATE RESERVATION) =====
+    // ===== KÍCH HOẠT NHẬN PHÒNG ĐÃ ĐẶT =====
     @GetMapping("/checkin/activate/{id}")
-    public String activateReservation(
-            @PathVariable Long id,
-            RedirectAttributes redirectAttributes
-    ) {
+    public String activateReservation(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(id);
         if (checkIn == null || !"RESERVED".equals(checkIn.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin đặt trước hợp lệ!");
             return "redirect:/rooms";
         }
-
-        Room room = checkIn.getRoom();
         checkIn.setStatus("ACTIVE");
-        checkIn.setCheckInTime(LocalDateTime.now()); // Cập nhật thời gian check-in thực tế
-
-        roomService.updateStatus(room.getId(), RoomStatus.OCCUPIED);
+        checkIn.setCheckInTime(LocalDateTime.now());
+        roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.OCCUPIED);
         checkInService.save(checkIn);
-
         redirectAttributes.addFlashAttribute("successMessage", "Check-in khách thành công!");
         return "redirect:/rooms";
     }
 
     // ===== HỦY ĐẶT PHÒNG =====
     @GetMapping("/booking/cancel/{id}")
-    public String cancelReservation(
-            @PathVariable Long id,
-            RedirectAttributes redirectAttributes
-    ) {
+    public String cancelReservation(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(id);
         if (checkIn == null || !"RESERVED".equals(checkIn.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin đặt trước để hủy!");
             return "redirect:/rooms";
         }
-
-        Room room = checkIn.getRoom();
         checkIn.setStatus("CANCELLED");
         checkIn.setCheckOutTime(LocalDateTime.now());
-
-        roomService.updateStatus(room.getId(), RoomStatus.AVAILABLE);
+        roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.AVAILABLE);
         checkInService.save(checkIn);
-
         redirectAttributes.addFlashAttribute("successMessage", "Hủy đặt phòng thành công!");
         return "redirect:/rooms";
     }
 
     // ===== CHUYỂN PHÒNG =====
     @PostMapping("/checkin/transfer")
-    public String transferRoom(
-            @RequestParam Long checkInId,
-            @RequestParam Long newRoomId,
-            RedirectAttributes redirectAttributes
-    ) {
+    public String transferRoom(@RequestParam Long checkInId, @RequestParam Long newRoomId,
+            RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(checkInId);
         Room newRoom = roomService.findById(newRoomId);
-
         if (checkIn == null || newRoom == null || newRoom.getStatus() != RoomStatus.AVAILABLE) {
-            redirectAttributes.addFlashAttribute("error", "Chuyển phòng thất bại! Phòng mới không khả dụng.");
+            redirectAttributes.addFlashAttribute("error", "Chuyển phòng thất bại!");
             return "redirect:/rooms";
         }
-
-        Room oldRoom = checkIn.getRoom();
-
-        // Cập nhật trạng thái phòng cũ
-        roomService.updateStatus(oldRoom.getId(), RoomStatus.AVAILABLE);
-
-        // Cập nhật phòng mới theo trạng thái của check-in
-        if ("ACTIVE".equals(checkIn.getStatus())) {
+        roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.AVAILABLE);
+        if ("ACTIVE".equals(checkIn.getStatus()))
             roomService.updateStatus(newRoom.getId(), RoomStatus.OCCUPIED);
-        } else if ("RESERVED".equals(checkIn.getStatus())) {
+        else if ("RESERVED".equals(checkIn.getStatus()))
             roomService.updateStatus(newRoom.getId(), RoomStatus.RESERVED);
-        }
-
-        // Cập nhật thông tin phiếu thuê
         checkIn.setRoom(newRoom);
         checkInService.save(checkIn);
-
-        redirectAttributes.addFlashAttribute("successMessage", "Chuyển phòng từ " + oldRoom.getRoomName() + " sang " + newRoom.getRoomName() + " thành công!");
+        redirectAttributes.addFlashAttribute("successMessage", "Chuyển phòng thành công!");
         return "redirect:/rooms";
     }
 
-    // ===== GIA HẠN THỜI GIAN THUÊ =====
+    // ===== GIA HẠN THỜI GIAN =====
     @PostMapping("/checkin/extend")
-    public String extendCheckIn(
-            @RequestParam Long checkInId,
-            @RequestParam Double additionalHours,
-            RedirectAttributes redirectAttributes
-    ) {
+    public String extendCheckIn(@RequestParam Long checkInId, @RequestParam Double additionalHours,
+            RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(checkInId);
         if (checkIn == null || !"ACTIVE".equals(checkIn.getStatus())) {
-            redirectAttributes.addFlashAttribute("error", "Gia hạn thất bại! Phiếu thuê không hoạt động.");
+            redirectAttributes.addFlashAttribute("error", "Gia hạn thất bại!");
             return "redirect:/rooms";
         }
-
         checkIn.setExpectedHours(checkIn.getExpectedHours() + additionalHours);
         checkInService.save(checkIn);
-
-        redirectAttributes.addFlashAttribute("successMessage", "Gia hạn thời gian thuê thêm " + additionalHours + " giờ thành công!");
+        redirectAttributes.addFlashAttribute("successMessage", "Gia hạn thành công!");
         return "redirect:/rooms";
     }
 
-    // ===== 1. GIAO DIỆN XEM TRƯỚC HÓA ĐƠN XUẤT PHÒNG =====
+    // ===== CHUẨN BỊ TRẢ PHÒNG & TÍNH TOÁN TIỀN PHÒNG (Feature 54) =====
     @GetMapping("/checkout/{roomId}")
-    public String checkOut(
-            @PathVariable Long roomId,
-            Model model,
-            RedirectAttributes redirectAttributes
-    ) {
+    public String checkOut(@PathVariable Long roomId, Model model, RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findActiveByRoomId(roomId);
         if (checkIn == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy phiên sử dụng phòng đang hoạt động!");
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy phiên sử dụng phòng!");
             return "redirect:/rooms";
         }
-
-        LocalDateTime tempCheckOutTime = LocalDateTime.now();
-        Duration duration = Duration.between(checkIn.getCheckInTime(), tempCheckOutTime);
-        double totalHours = Math.max(1.0, duration.toMinutes() / 60.0);
-
-        double roomPrice = 0.0;
-        if (checkIn.getRoom() != null) {
-            roomPrice = checkIn.getRoom().getPrice();
-        }
-
+        LocalDateTime now = LocalDateTime.now();
+        double totalHours = Math.max(1.0, Duration.between(checkIn.getCheckInTime(), now).toMinutes() / 60.0);
+        double roomPrice = checkIn.getRoom().getPrice();
         double expectedHours = checkIn.getExpectedHours() != null ? checkIn.getExpectedHours() : 0.0;
-        double roomTotalPrice = 0.0;
-        double overtimeHours = 0.0;
-        double overtimeCharge = 0.0;
+        double roomTotalPrice, overtimeHours = 0.0, overtimeCharge = 0.0;
 
         if (expectedHours > 0.0 && totalHours > expectedHours) {
             roomTotalPrice = expectedHours * roomPrice;
             overtimeHours = totalHours - expectedHours;
-            overtimeCharge = overtimeHours * roomPrice * 1.5; // Hệ số phụ phí quá giờ 1.5x
+            overtimeCharge = overtimeHours * roomPrice * 1.5;
         } else {
             roomTotalPrice = totalHours * roomPrice;
         }
 
-        // Quét đơn gọi dịch vụ của bạn
-        List<RoomServiceOrder> activeOrders = new ArrayList<>();
-        double totalServicePrice = 0.0;
-
-        try {
-            List<RoomServiceOrder> ordersInDb = roomServiceOrderRepository.findByRoomIdAndStatus(roomId, "PENDING");
-            if (ordersInDb != null) {
-                for (RoomServiceOrder order : ordersInDb) {
-                    if (order != null && order.getTotalPrice() != null) {
-                        activeOrders.add(order);
-                        totalServicePrice += order.getTotalPrice();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Lỗi quét danh sách món ăn: " + e.getMessage());
-        }
-
-        double finalBillPrice = roomTotalPrice + overtimeCharge + totalServicePrice;
-
-        checkIn.setCheckOutTime(tempCheckOutTime);
-        checkIn.setTotalHours(totalHours);
-        checkIn.setOvertimeHours(overtimeHours);
-        checkIn.setOvertimeCharge(overtimeCharge);
+        List<RoomServiceOrder> orders = roomServiceOrderRepository.findByRoomIdAndStatus(roomId, "PENDING");
+        double totalServicePrice = orders.stream().mapToDouble(RoomServiceOrder::getTotalPrice).sum();
 
         model.addAttribute("checkIn", checkIn);
-        model.addAttribute("tempCheckOutTime", tempCheckOutTime);
         model.addAttribute("totalHours", totalHours);
         model.addAttribute("roomTotalPrice", roomTotalPrice);
-        model.addAttribute("serviceOrders", activeOrders);
+        model.addAttribute("serviceOrders", orders);
         model.addAttribute("totalServicePrice", totalServicePrice);
-        model.addAttribute("finalBillPrice", finalBillPrice);
-
+        model.addAttribute("finalBillPrice", roomTotalPrice + overtimeCharge + totalServicePrice);
         return "billing/confirm";
     }
 
-    // ===== 2. XỬ LÝ LƯU CHỐT HÓA ĐƠN XUỐNG DB (BẢO MẬT KHÉP KÍN) =====
+    // ===== XÁC NHẬN THANH TOÁN (Feature 54, 55, 56) =====
     @PostMapping("/billing/confirm")
-    public String confirmBilling(
-            @RequestParam Long id,
-            @RequestParam(value = "totalHours", defaultValue = "1.0") Double totalHours,
+    public String confirmBilling(@RequestParam Long id, @RequestParam(defaultValue = "1.0") Double totalHours,
             @RequestParam(defaultValue = "0.0") Double surcharge,
-            RedirectAttributes redirectAttributes
-    ) {
+            @RequestParam(defaultValue = "CASH") String paymentMethod,
+            RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(id);
-        if (checkIn == null) {
-            redirectAttributes.addFlashAttribute("error", "Thanh toán thất bại! Không tìm thấy phiếu thuê.");
+        if (checkIn == null)
             return "redirect:/rooms";
-        }
 
-        double roomPrice = 0.0;
-        if (checkIn.getRoom() != null) {
-            roomPrice = checkIn.getRoom().getPrice();
-        }
+        double roomPrice = checkIn.getRoom().getPrice();
+        double expected = checkIn.getExpectedHours() != null ? checkIn.getExpectedHours() : 0.0;
+        double roomTotal = (totalHours > expected) ? (expected * roomPrice) : (totalHours * roomPrice);
+        double overtime = (totalHours > expected) ? ((totalHours - expected) * roomPrice * 1.5) : 0.0;
 
-        double expectedHours = checkIn.getExpectedHours() != null ? checkIn.getExpectedHours() : 0.0;
-        double calculatedRoomPrice = 0.0;
-        double overtimeHours = 0.0;
-        double overtimeCharge = 0.0;
-
-        if (expectedHours > 0.0 && totalHours > expectedHours) {
-            calculatedRoomPrice = expectedHours * roomPrice;
-            overtimeHours = totalHours - expectedHours;
-            overtimeCharge = overtimeHours * roomPrice * 1.5;
-        } else {
-            calculatedRoomPrice = totalHours * roomPrice;
-        }
-
-        double calculatedServicePrice = 0.0;
-        List<RoomServiceOrder> activeOrders = null;
-
-        if (checkIn.getRoom() != null) {
-            Long roomId = checkIn.getRoom().getId();
-            activeOrders = roomServiceOrderRepository.findByRoomIdAndStatus(roomId, "PENDING");
-            if (activeOrders != null) {
-                for (RoomServiceOrder order : activeOrders) {
-                    if (order != null && order.getTotalPrice() != null) {
-                        calculatedServicePrice += order.getTotalPrice();
-                    }
-                }
-            }
-        }
-
-        double secureFinalPrice = calculatedRoomPrice + overtimeCharge + calculatedServicePrice + surcharge;
+        List<RoomServiceOrder> orders = roomServiceOrderRepository.findByRoomIdAndStatus(checkIn.getRoom().getId(),
+                "PENDING");
+        double serviceTotal = orders.stream().mapToDouble(RoomServiceOrder::getTotalPrice).sum();
 
         checkIn.setCheckOutTime(LocalDateTime.now());
         checkIn.setTotalHours(totalHours);
-        checkIn.setOvertimeHours(overtimeHours);
-        checkIn.setOvertimeCharge(overtimeCharge);
+        checkIn.setOvertimeHours((totalHours > expected) ? (totalHours - expected) : 0.0);
+        checkIn.setOvertimeCharge(overtime);
         checkIn.setSurcharge(surcharge);
-        checkIn.setTotalPrice(secureFinalPrice);
+        checkIn.setTotalPrice(roomTotal + overtime + serviceTotal + surcharge);
         checkIn.setStatus("COMPLETED");
         checkInService.save(checkIn);
 
-        if (activeOrders != null) {
-            for (RoomServiceOrder order : activeOrders) {
-                if (order != null) {
-                    order.setStatus("DELIVERED");
-                    roomServiceOrderRepository.save(order);
-                }
-            }
-        }
+        Bill bill = new Bill();
+        bill.setBillCode("HD-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-"
+                + UUID.randomUUID().toString().substring(0, 4).toUpperCase());
+        bill.setCheckIn(checkIn);
+        bill.setRoomPriceReal(roomTotal);
+        bill.setOvertimePriceReal(overtime);
+        bill.setServicePriceReal(serviceTotal);
+        bill.setSurchargeReal(surcharge);
+        bill.setFinalAmount(checkIn.getTotalPrice());
+        bill.setPaymentMethod(paymentMethod);
+        bill.setPaymentStatus("PAID");
+        bill.setPaymentTime(LocalDateTime.now());
+        bill.setStatus("PAID"); // Đảm bảo gán trạng thái hóa đơn lúc tạo mới
+        billRepository.save(bill);
 
-        if (checkIn.getRoom() != null) {
-            roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.CLEANING);
-        }
+        orders.forEach(o -> {
+            o.setStatus("DELIVERED");
+            roomServiceOrderRepository.save(o);
+        });
+        roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.CLEANING);
 
-        redirectAttributes.addFlashAttribute("successMessage", "Thanh toán thành công cho phòng " + checkIn.getRoom().getRoomName() + "!");
-        return "redirect:/rooms";
+        return "redirect:/billing/invoice/" + bill.getId();
     }
 
+    // ===== XEM VÀ IN HÓA ĐƠN CHI TIẾT (Feature 57) =====
+    @GetMapping("/billing/invoice/{id}")
+    public String viewInvoice(@PathVariable Long id, Model model) {
+        model.addAttribute("bill", billRepository.findById(id).orElseThrow());
+        return "billing/invoice";
+    }
+
+    @GetMapping("/billing/invoice/by-checkin/{checkInId}")
+    public String viewInvoiceByCheckIn(@PathVariable Long checkInId, RedirectAttributes redirectAttributes) {
+        return billRepository.findByCheckInId(checkInId)
+                .map(b -> "redirect:/billing/invoice/" + b.getId())
+                .orElse("redirect:/checkin/history");
+    }
+
+    // ===== XEM LỊCH SỬ THUÊ PHÒNG =====
     @PreAuthorize("hasAuthority('View_History')")
     @GetMapping("/checkin/history")
-    public String history(Model model){
-        model.addAttribute("list", checkInService.getAll());
+    public String history(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size,
+            Model model) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("id").descending());
+        org.springframework.data.domain.Page<CheckIn> checkInPage = checkInService.getAll(pageable);
+        model.addAttribute("list", checkInPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", checkInPage.getTotalPages());
         return "checkin/history";
+    }
+
+    // ===== FEATURE 58: XEM LỊCH SỬ THANH TOÁN (ADMIN) =====
+    @PreAuthorize("hasAuthority('View_History') or hasRole('ADMIN')")
+    @GetMapping("/billing/history")
+    public String viewBillingHistory(Model model) {
+        List<Bill> bills = billRepository.findAll();
+        double totalRevenue = bills.stream()
+                .filter(b -> !"REFUNDED".equals(b.getStatus()))
+                .mapToDouble(Bill::getFinalAmount)
+                .sum();
+        model.addAttribute("bills", bills);
+        model.addAttribute("totalRevenue", totalRevenue);
+        return "billing/history";
+    }
+
+    // ===== FEATURE 59: ADMIN XỬ LÝ HOÀN TIỀN KHI CÓ SỰ CỐ =====
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/billing/refund/{id}")
+    public String refundBill(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Optional<Bill> billOpt = billRepository.findById(id);
+        if (billOpt.isPresent()) {
+            Bill bill = billOpt.get();
+            if ("REFUNDED".equals(bill.getStatus())) {
+                redirectAttributes.addFlashAttribute("error", "Hóa đơn này đã được hoàn tiền trước đó!");
+                return "redirect:/billing/history";
+            }
+            // 1. Cập nhật trạng thái hóa đơn
+            bill.setStatus("REFUNDED");
+            billRepository.save(bill);
+
+            // 2. Đồng bộ đưa trạng thái phòng về CLEANING qua roomService bảo mật hơn
+            if (bill.getCheckIn() != null && bill.getCheckIn().getRoom() != null) {
+                roomService.updateStatus(bill.getCheckIn().getRoom().getId(), RoomStatus.CLEANING);
+            }
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã hoàn tiền thành công cho hóa đơn " + bill.getBillCode());
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy hóa đơn yêu cầu hoàn tiền.");
+        }
+        return "redirect:/billing/history";
     }
 }

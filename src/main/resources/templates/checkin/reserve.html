@@ -19,10 +19,14 @@
             <form th:action="@{/reserve/save}" method="post">
                 <div class="mb-3">
                     <label class="form-label fw-bold">Khách hàng</label>
-                    <select name="customerId" class="form-select" required>
-                        <option value="">-- Chọn khách hàng --</option>
-                        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.fullName + ' - CCCD: ' + c.identityNumber}"></option>
-                    </select>
+                    <input type="text" id="customerSearch" class="form-control mb-1" placeholder="Nhập tên hoặc CCCD để tìm kiếm..." list="customerDatalist" autocomplete="off" required>
+                    <datalist id="customerDatalist">
+                        <option th:each="c : ${customers}" 
+                                th:value="${c.fullName + ' - CCCD: ' + c.identityNumber}" 
+                                th:data-id="${c.id}"></option>
+                    </datalist>
+                    <input type="hidden" name="customerId" id="customerId" required>
+                    <div id="customerSearchFeedback" class="form-text text-muted">Vui lòng nhập và chọn khách hàng từ danh sách.</div>
                 </div>
 
                 <div class="mb-3">
@@ -31,7 +35,7 @@
                         <option value="">-- Chọn phòng --</option>
                         <option th:each="r : ${rooms}" 
                                 th:value="${r.id}" 
-                                th:text="${r.roomName + ' (Giá: ' + #numbers.formatDecimal(r.price,1,0) + 'đ/h)'}"
+                                th:text="${r.roomName + ' (Giá: ' + #numbers.formatDecimal(r.price, 1, 'POINT', 0, 'COMMA') + 'đ/h)'}"
                                 th:selected="${r.id == selectedRoomId}"></option>
                     </select>
                 </div>
@@ -51,5 +55,32 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('customerSearch');
+    const hiddenInput = document.getElementById('customerId');
+    const datalist = document.getElementById('customerDatalist');
+    const feedback = document.getElementById('customerSearchFeedback');
+
+    searchInput.addEventListener('input', function() {
+        const value = this.value;
+        let found = false;
+        const options = datalist.options;
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === value) {
+                hiddenInput.value = options[i].getAttribute('data-id');
+                feedback.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Đã chọn: ' + value + '</span>';
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            hiddenInput.value = '';
+            feedback.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill"></i> Vui lòng chọn một khách hàng hợp lệ từ danh sách gợi ý.</span>';
+        }
+    });
+});
+</script>
 </body>
 </html>

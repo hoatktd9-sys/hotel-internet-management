@@ -23,8 +23,18 @@ public class CustomerController {
     // ===== FEATURE: XEM DANH SÁCH KHÁCH HÀNG =====
     @PreAuthorize("hasAuthority('View_Customer')")
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("list", service.findAll());
+    public String list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size,
+            Model model) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("id").descending());
+        org.springframework.data.domain.Page<Customer> customerPage = service.search(keyword, pageable);
+        model.addAttribute("list", customerPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", customerPage.getTotalPages());
+        model.addAttribute("keyword", keyword);
         return "customer/list";
     }
 
@@ -43,8 +53,7 @@ public class CustomerController {
     public String save(
             @Valid @ModelAttribute("customer") Customer customer,
             BindingResult result,
-            Model model
-    ) {
+            Model model) {
         if (result.hasErrors()) {
             model.addAttribute("isEdit", false);
             return "customer/create";
@@ -73,8 +82,7 @@ public class CustomerController {
     public String update(
             @Valid @ModelAttribute("customer") Customer customer,
             BindingResult result,
-            Model model
-    ) {
+            Model model) {
         if (result.hasErrors()) {
             model.addAttribute("isEdit", true);
             return "customer/create";
@@ -97,7 +105,8 @@ public class CustomerController {
             service.delete(id);
             redirectAttributes.addFlashAttribute("success", "Xóa khách hàng thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Không thể xóa khách hàng vì khách đã có lịch sử thuê phòng!");
+            redirectAttributes.addFlashAttribute("error",
+                    "Không thể xóa khách hàng vì khách đã có lịch sử thuê phòng!");
         }
         return "redirect:/customers";
     }
@@ -105,10 +114,12 @@ public class CustomerController {
     // ===== FEATURE: TÌM KIẾM KHÁCH HÀNG =====
     @PreAuthorize("hasAuthority('View_Customer')")
     @GetMapping("/search")
-    public String searchCustomer(@RequestParam(required = false) String keyword, Model model) {
-        model.addAttribute("list", service.search(keyword));
-        model.addAttribute("keyword", keyword);
-        return "customer/list";
+    public String searchCustomer(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        return list(keyword, page, size, model);
     }
 
     // ===== FEATURE: QUẢN LÝ KHÁCH VIP (ĐÃ FIX PHÂN QUYỀN) =====

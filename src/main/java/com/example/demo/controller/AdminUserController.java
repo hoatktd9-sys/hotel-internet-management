@@ -27,8 +27,8 @@ public class AdminUserController {
     private final LoginHistoryRepository loginHistoryRepository;
 
     public AdminUserController(UserService userService, RoleRepository roleRepository,
-                               PermissionRepository permissionRepository, PasswordEncoder passwordEncoder,
-                               LoginHistoryRepository loginHistoryRepository) {
+            PermissionRepository permissionRepository, PasswordEncoder passwordEncoder,
+            LoginHistoryRepository loginHistoryRepository) {
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
@@ -36,13 +36,12 @@ public class AdminUserController {
         this.loginHistoryRepository = loginHistoryRepository;
     }
 
-
     @PostMapping("/users/create")
     public String createUser(@RequestParam String username,
-                             @RequestParam String password,
-                             @RequestParam String email,
-                             @RequestParam(required = false) List<Long> roleIds,
-                             RedirectAttributes redirectAttributes) {
+            @RequestParam String password,
+            @RequestParam String email,
+            @RequestParam(required = false) List<Long> roleIds,
+            RedirectAttributes redirectAttributes) {
         if (userService.findByUsername(username).isPresent()) {
             redirectAttributes.addFlashAttribute("error", "Username đã tồn tại");
             return "redirect:/admin/users";
@@ -74,7 +73,8 @@ public class AdminUserController {
         if (user != null) {
             user.setActive(!user.isActive());
             userService.save(user);
-            redirectAttributes.addFlashAttribute("success", user.isActive() ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản");
+            redirectAttributes.addFlashAttribute("success",
+                    user.isActive() ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản");
             return "redirect:/admin/users";
         }
         redirectAttributes.addFlashAttribute("error", "Khóa thất bại");
@@ -83,7 +83,8 @@ public class AdminUserController {
     }
 
     @PostMapping("/users/reset-password/{id}")
-    public String resetPassword(@PathVariable Long id, @RequestParam String newPassword, RedirectAttributes redirectAttributes) {
+    public String resetPassword(@PathVariable Long id, @RequestParam String newPassword,
+            RedirectAttributes redirectAttributes) {
         User user = userService.findById(id);
         if (user != null) {
             user.setPassword(passwordEncoder.encode(newPassword));
@@ -94,7 +95,8 @@ public class AdminUserController {
     }
 
     @PostMapping("/users/assign-role/{id}")
-    public String assignRole(@PathVariable Long id, @RequestParam(required = false) List<Long> roleIds, RedirectAttributes redirectAttributes) {
+    public String assignRole(@PathVariable Long id, @RequestParam(required = false) List<Long> roleIds,
+            RedirectAttributes redirectAttributes) {
         User user = userService.findById(id);
         if (user != null) {
             if (roleIds != null && !roleIds.isEmpty()) {
@@ -112,7 +114,8 @@ public class AdminUserController {
     }
 
     @PostMapping("/roles/update-permissions/{id}")
-    public String updatePermissions(@PathVariable Long id, @RequestParam(required = false) List<Long> permissionIds, RedirectAttributes redirectAttributes) {
+    public String updatePermissions(@PathVariable Long id, @RequestParam(required = false) List<Long> permissionIds,
+            RedirectAttributes redirectAttributes) {
         Role role = roleRepository.findById(id).orElse(null);
         if (role != null) {
             if (permissionIds != null && !permissionIds.isEmpty()) {
@@ -140,9 +143,9 @@ public class AdminUserController {
 
     @PostMapping("/users/update/{id}")
     public String updateUser(@PathVariable Long id,
-                             @RequestParam String newUsername,
-                             @RequestParam String newEmail,
-                             RedirectAttributes redirectAttributes) {
+            @RequestParam String newUsername,
+            @RequestParam String newEmail,
+            RedirectAttributes redirectAttributes) {
 
         User user = userService.findById(id);
         if (user != null) {
@@ -162,15 +165,15 @@ public class AdminUserController {
             @RequestParam(required = false) String email,
             @RequestParam(required = false) Long roleId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "15") int size,
             Model model) {
-        
+
         String roleName = null;
         if (roleId != null) {
             java.util.Optional<com.example.demo.model.Role> optionalRole = roleRepository.findById(roleId);
             roleName = optionalRole.map(com.example.demo.model.Role::getRoleName).orElse(null);
         }
-        
+
         Page<User> userPage = userService.searchUser(username, email, roleName, page, size);
 
         model.addAttribute("users", userPage.getContent());
@@ -186,8 +189,16 @@ public class AdminUserController {
     }
 
     @GetMapping("/login-history")
-    public String loginHistory(Model model) {
-        model.addAttribute("history", loginHistoryRepository.findAllByOrderByLoginTimeDesc());
+    public String loginHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size,
+            Model model) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<com.example.demo.model.LoginHistory> historyPage = loginHistoryRepository
+                .findAllByOrderByLoginTimeDesc(pageable);
+        model.addAttribute("history", historyPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", historyPage.getTotalPages());
         return "admin/users/login_history";
     }
 }

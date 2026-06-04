@@ -26,7 +26,7 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <h6 class="text-uppercase mb-1 small text-white-50">Tổng doanh thu hệ thống</h6>
-                        <h2 class="fw-bold m-0" th:text="${#numbers.formatDecimal(totalRevenue,1,0)} + ' VNĐ'">0 VNĐ</h2>
+                        <h2 class="fw-bold m-0" th:text="${#numbers.formatDecimal(totalRevenue, 1, 'POINT', 0, 'COMMA')} + ' VNĐ'">0 VNĐ</h2>
                     </div>
                     <div class="fs-1 opacity-50"><i class="bi bi-currency-dollar"></i></div>
                 </div>
@@ -76,7 +76,7 @@
                     </td>
                     <td class="text-end fw-bold"
                         th:classappend="${bill.status == 'REFUNDED'} ? 'text-decoration-line-through text-secondary' : 'text-danger'"
-                        th:text="${bill.status == 'REFUNDED'} ? '-' + ${#numbers.formatDecimal(bill.finalAmount,1,0)} + ' đ' : ${#numbers.formatDecimal(bill.finalAmount,1,0)} + ' đ'">0 đ</td>
+                        th:text="${bill.status == 'REFUNDED'} ? '-' + ${#numbers.formatDecimal(bill.finalAmount, 1, 'POINT', 0, 'COMMA')} + ' đ' : ${#numbers.formatDecimal(bill.finalAmount, 1, 'POINT', 0, 'COMMA')} + ' đ'">0 đ</td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
                             <a th:href="@{/billing/invoice/{id}(id=${bill.id})}" class="btn btn-outline-secondary btn-sm rounded-2">

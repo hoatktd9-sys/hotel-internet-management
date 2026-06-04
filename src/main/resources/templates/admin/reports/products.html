@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Thống kê sản phẩm bán chạy')}"></head>
+<body class="bg-light">
+
+<div class="container-fluid mt-4">
+    <!-- NAVBAR -->
+    <div th:replace="~{fragments/layout :: navbar('Báo cáo & Thống kê > Sản phẩm bán chạy')}"></div>
+
+    <!-- ACTION BAR -->
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-3 shadow-sm">
+        <h5 class="fw-bold text-dark m-0"><i class="bi bi-egg-fried text-success"></i> Thống kê doanh số bán thực đơn &amp; dịch vụ</h5>
+        <a href="/admin/reports/export?type=products" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-excel"></i> Xuất Excel báo cáo</a>
+    </div>
+
+    <!-- PRODUCT POPULARITY TABLE -->
+    <div class="card border-0 shadow-sm p-4 rounded-3 bg-white">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 80px;">Hạng</th>
+                        <th>Tên Thực Đơn / Dịch Vụ</th>
+                        <th>Danh Mục</th>
+                        <th class="text-center">Số Lượng Bán</th>
+                        <th class="text-center">Độ hot (Biểu đồ số lượng)</th>
+                        <th class="text-end">Tổng Doanh Số</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p, iterStat : ${productReport}">
+                        <td class="fw-bold">
+                            <span th:if="${iterStat.count == 1}" class="badge bg-warning text-dark fs-6"><i class="bi bi-fire"></i> Hot 1</span>
+                            <span th:if="${iterStat.count == 2}" class="badge bg-secondary text-white fs-6">2</span>
+                            <span th:if="${iterStat.count == 3}" class="badge bg-danger text-white fs-6">3</span>
+                            <span th:if="${iterStat.count > 3}" th:text="${iterStat.count}" class="text-muted ps-2"></span>
+                        </td>
+                        <td th:text="${p.productName}" class="fw-bold text-dark">Mỳ tôm trứng</td>
+                        <td th:text="${p.categoryName}">Đồ ăn</td>
+                        <td th:text="${p.quantitySold} + ' phần/lượt'" class="fw-bold text-center">0</td>
+                        <td>
+                            <!-- Fake progress bar representing popularity -->
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     th:style="'width: ' + ${p.quantitySold * 5 > 100 ? 100 : p.quantitySold * 5} + '%'" 
+                                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(p.totalRevenue, 1, 'POINT', 0, 'COMMA')} + 'đ'" class="text-end text-danger fw-bold">0đ</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(productReport)}">
+                        <td colspan="6" class="text-center text-muted py-4">Chưa có dữ liệu gọi dịch vụ nào được hoàn thành.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

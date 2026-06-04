@@ -19,6 +19,10 @@ public class CheckInService {
         return checkInRepository.findAll();
     }
 
+    public org.springframework.data.domain.Page<CheckIn> getAll(org.springframework.data.domain.Pageable pageable) {
+        return checkInRepository.findAll(pageable);
+    }
+
     // ===== TÌM THEO ID =====
     public CheckIn findById(Long id){
         return checkInRepository

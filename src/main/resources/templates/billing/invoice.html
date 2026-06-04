@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hóa đơn thanh toán - Gaming Hotel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .invoice-box { max-width: 800px; margin: 30px auto; padding: 30px; border: 1px solid #eee; background: #fff; border-radius: 8px; }
+
+        /* CSS TỐI ƯU TRANG IN - TỰ ĐỘNG KÍCH HOẠT KHI IN */
+        @media print {
+            .no-print, .btn, a {
+                display: none !important; /* Ẩn các nút điều hướng và thành phần thừa */
+            }
+            body {
+                background: none !important;
+                padding: 0 !important;
+            }
+            .invoice-box {
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0 auto !important;
+                padding: 10px !important;
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mx-auto mt-4 no-print" style="max-width: 800px;">
+        <a href="/rooms" class="btn btn-secondary fw-bold">
+            <i class="bi bi-house"></i> Về sơ đồ phòng
+        </a>
+        <button onclick="window.print()" class="btn btn-primary fw-bold px-4">
+            <i class="bi bi-printer"></i> In hóa đơn cho khách
+        </button>
+    </div>
+
+    <div class="invoice-box shadow-sm">
+        <div class="row mb-4">
+            <div class="col-6">
+                <h3 class="fw-bold text-dark">🏢 GAMING HOTEL</h3>
+                <p class="text-muted small mb-0">Địa chỉ: Thành phố Phủ Lý, Hà Nam</p>
+                <p class="text-muted small">Điện thoại: 0912.XXX.XXX</p>
+            </div>
+            <div class="col-6 text-end">
+                <h2 class="text-primary fw-bold mb-0">HÓA ĐƠN</h2>
+                <h5 class="text-secondary fw-bold" th:text="${bill.billCode}">HD-000000</h5>
+                <p class="text-muted small mb-0">Ngày tạo: <span th:text="${#temporals.format(bill.paymentTime, 'dd/MM/yyyy HH:mm:ss')}"></span></p>
+                <p class="text-muted small">Hình thức:
+                    <span th:if="${bill.paymentMethod == 'CASH'}" class="fw-bold text-success">💵 TIỀN MẶT</span>
+                    <span th:if="${bill.paymentMethod == 'TRANSFER'}" class="fw-bold text-primary">🏦 CHUYỂN KHOẢN</span>
+                </p>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="row my-4">
+            <div class="col-12">
+                <h5 class="fw-bold text-secondary">👤 THÔNG TIN KHÁCH HÀNG</h5>
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <th style="width: 20%;">Khách hàng:</th>
+                        <td class="fw-bold" th:text="${bill.checkIn.customer != null ? bill.checkIn.customer.fullName : 'Khách vãng lai'}"></td>
+                        <th style="width: 20%;">Số CCCD:</th>
+                        <td th:text="${bill.checkIn.customer != null ? bill.checkIn.customer.identityNumber : 'N/A'}"></td>
+                    </tr>
+                    <tr>
+                        <th>Phòng sử dụng:</th>
+                        <td class="fw-bold text-success" th:text="${bill.checkIn.room != null ? bill.checkIn.room.roomName : 'N/A'}"></td>
+                        <th>Thời gian sử dụng:</th>
+                        <td class="fw-bold text-dark">
+                            <span th:text="${bill.checkIn != null ? #numbers.formatDecimal(bill.checkIn.expectedHours,1,1) : '1.0'}">1.0</span> giờ đăng ký
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <h5 class="fw-bold text-secondary">💰 CHI TIẾT THANH TOÁN</h5>
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Hạng mục</th>
+                <th class="text-end" style="width: 30%;">Thành tiền (VNĐ)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <b>Tiền giờ dịch vụ phòng sử dụng</b> <br>
+                    <small class="text-muted" th:text="'Mở máy: ' + ${#temporals.format(bill.checkIn.checkInTime, 'dd/MM/yyyy HH:mm:ss')} + ' - Trả máy: ' + ${#temporals.format(bill.checkIn.checkOutTime, 'dd/MM/yyyy HH:mm:ss')}"></small>
+                </td>
+                <td class="text-end fw-bold" th:text="${bill.checkIn.room != null ? #numbers.formatDecimal(bill.checkIn.room.price,1,0) : '0'}">0</td>
+            </tr>
+
+            <tr th:if="${bill.finalAmount > bill.checkIn.room.price}">
+                <td class="text-danger">
+                    <b>Phụ thu dịch vụ phát sinh &amp; Quá giờ</b> <br>
+                    <small class="text-muted">Bao gồm dịch vụ đồ ăn gọi thêm hoặc tiền bù giờ tính lũy tiến hệ số</small>
+                </td>
+                <td class="text-end fw-bold text-danger"
+                    th:text="${#numbers.formatDecimal(bill.finalAmount - bill.checkIn.room.price, 1, 0)}">0</td>
+            </tr>
+
+            <tr class="fs-5 table-success">
+                <th class="text-success text-uppercase">Tổng tiền đã thanh toán:</th>
+                <th class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(bill.finalAmount,1,0)} + ' VNĐ'">0 VNĐ</th>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="row mt-5 text-center">
+            <div class="col-6">
+                <p class="mb-5 text-muted small">Khách hàng</p>
+                <br>
+                <p class="fw-bold" th:text="${bill.checkIn.customer != null ? bill.checkIn.customer.fullName : 'Khách vãng lai'}"></p>
+            </div>
+            <div class="col-6">
+                <p class="mb-5 text-muted small">Nhân viên thu ngân</p>
+                <br>
+                <p class="fw-bold">Xác nhận đã thu đủ</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

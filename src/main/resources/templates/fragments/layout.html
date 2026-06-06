@@ -101,14 +101,30 @@
         </div>
 
         <div class="dropdown">
-            <button
-                    class="btn btn-outline-warning text-dark dropdown-toggle fw-bold d-flex align-items-center gap-1"
+            <button class="btn btn-outline-warning text-dark dropdown-toggle fw-bold d-flex align-items-center gap-1"
                     type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-cart"></i> Nhóm Dịch Vụ
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item fw-bold" href="/service-categories" sec:authorize="hasRole('ADMIN') or hasAuthority('Admin_Service')"><i class="bi bi-grid-fill"></i> Dịch vụ</a></li>
-                <li><a class="dropdown-item fw-bold" href="/admin/products"><i class="bi bi-egg-fried"></i> Thực đơn</a></li>
+                <li><a class="dropdown-item fw-bold" href="/service-categories"><i class="bi bi-tags-fill"></i> Nhóm Dịch Vụ</a></li>
+                <li><a class="dropdown-item fw-bold" href="/admin/products"><i class="bi bi-egg-fried"></i> Quản lý thực đơn</a></li>
+                <li><a class="dropdown-item fw-bold text-dark" href="/admin/products/menu"><i class="bi bi-cup-straw text-warning"></i> Gọi món dịch vụ</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item fw-bold text-primary" href="/admin/inventory/stock">
+                        <i class="bi bi-box-seam-fill me-2"></i>Quản lý kho hàng
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item fw-bold text-info" href="/admin/suppliers" sec:authorize="hasRole('ADMIN')">
+                        <i class="bi bi-journal-bookmark-fill me-2"></i>Quản lý nhà cung cấp
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item fw-bold text-secondary" href="/admin/inventory/transactions">
+                        <i class="bi bi-clock-history me-2"></i>Lịch sử nhập xuất
+                    </a>
+                </li>
             </ul>
         </div>
 

@@ -49,15 +49,24 @@
 
         .btn-group-custom { display: flex; flex-direction: column; gap: 6px; margin-top: 15px; }
         .btn-action { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; }
+
+        /* HIGHLIGHT NHẤP NHÁY CHO BANNER CẢNH BÁO KHO TRÊN SƠ ĐỒ PHÒNG */
+        @keyframes alert-glow {
+            0% { box-shadow: 0 0 4px rgba(220, 53, 69, 0.2); }
+            50% { box-shadow: 0 0 14px rgba(220, 53, 69, 0.6); }
+            100% { box-shadow: 0 0 4px rgba(220, 53, 69, 0.2); }
+        }
+        .animate-alert-kho {
+            animation: alert-glow 2s infinite ease-in-out;
+            background-color: #fff5f5 !important;
+        }
     </style>
 </head>
 <body>
 <div class="container-fluid">
 
-    <!-- TOP BAR -->
     <div th:replace="~{fragments/layout :: navbar('Sảnh chính - Gaming Hotel')}"></div>
 
-    <!-- FLASH MESSAGES -->
     <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -67,7 +76,19 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
-    <!-- FILTER BAR -->
+    <div th:if="${lowStockCount > 0}" class="alert alert-danger alert-dismissible fade show shadow-sm border-start border-4 border-danger d-flex align-items-center justify-content-between my-3 animate-alert-kho" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-octagon-fill fs-4 text-danger me-3"></i>
+            <div class="text-dark">
+                <strong class="text-danger"><i class="bi bi-bell-fill"></i> CẢNH BÁO HỆ THỐNG KHO:</strong>
+                Phát hiện đang có <span class="badge bg-danger fs-6 px-2 py-1 mx-1" th:text="${lowStockCount}">0</span> mặt hàng dịch vụ đã hết hoặc sắp hết hàng (&le; 10)!
+            </div>
+        </div>
+        <a href="/admin/inventory/stock" class="btn btn-sm btn-danger fw-bold shadow-sm px-3 ms-3">
+            <i class="bi bi-box-seam"></i> Kiểm tra &amp; Nhập hàng ngay
+        </a>
+    </div>
+
     <div class="filter-bar">
         <span class="fw-bold text-dark me-2"><i class="bi bi-funnel-fill"></i> Bộ lọc trạng thái:</span>
         <a href="/rooms" class="btn btn-dark btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus == null} ? 'active'">Tất cả</a>
@@ -78,17 +99,14 @@
         <a href="/status/MAINTENANCE" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus?.name() == 'MAINTENANCE'} ? 'active'">Bảo trì</a>
     </div>
 
-    <!-- ROOM GRID -->
     <div class="room-grid">
         <div class="room-card" th:each="r : ${list}" th:classappend="'status-' + ${r.status}">
             <div>
-                <!-- Image with fallback -->
                 <img th:if="${r.image != null and r.image != ''}" th:src="@{'/uploads/images/' + ${r.image}}" class="room-image" alt="Room Image">
                 <img th:if="${r.image == null or r.image == ''}" src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&amp;w=400&amp;auto=format&amp;fit=crop" class="room-image" alt="No Image">
 
                 <div class="room-name">
                     <span th:text="${r.roomName}">Tên phòng</span>
-                    <!-- Dynamic badges -->
                     <span th:if="${r.status.name() == 'AVAILABLE'}" class="status-badge badge-available">Trống</span>
                     <span th:if="${r.status.name() == 'OCCUPIED'}" class="status-badge badge-occupied">Sử dụng</span>
                     <span th:if="${r.status.name() == 'RESERVED'}" class="status-badge badge-reserved">Đặt trước</span>
@@ -113,7 +131,6 @@
                     <span th:text="${r.description}" class="text-muted text-truncate" style="max-width: 250px; display: inline-block;">Mô tả</span>
                 </div>
 
-                <!-- ACTIVE GUEST INFO (OCCUPIED) -->
                 <div th:if="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null}" class="guest-box">
                     <div class="fw-bold mb-1 text-primary"><i class="bi bi-person-fill"></i> Khách đang chơi:</div>
                     <div>Họ tên: <b th:text="${r.activeCheckIn.customer != null ? r.activeCheckIn.customer.fullName : 'N/A'}">Guest Name</b></div>
@@ -122,7 +139,6 @@
                     <div>Thời gian: <span class="badge bg-primary" th:text="${r.activeCheckIn.expectedHours + ' giờ'}">Duration</span></div>
                 </div>
 
-                <!-- RESERVED GUEST INFO (RESERVED) -->
                 <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="guest-box reserved">
                     <div class="fw-bold mb-1 text-warning"><i class="bi bi-calendar-event-fill"></i> Khách đã đặt:</div>
                     <div>Khách: <b th:text="${r.reservedCheckIn.customer != null ? r.reservedCheckIn.customer.fullName : 'N/A'}">Guest Name</b></div>
@@ -132,30 +148,25 @@
                 </div>
             </div>
 
-            <!-- ACTION BUTTONS -->
             <div class="mt-auto">
                 <div class="btn-group-custom">
-                    <!-- Top Row: Admin CRUD + Create Stay directly -->
                     <div class="d-flex gap-1 w-100">
                         <a th:href="@{/edit/{id}(id=${r.id})}" class="btn btn-warning btn-action text-white flex-fill justify-content-center" sec:authorize="hasRole('ADMIN')"><i class="bi bi-pencil-square"></i> Sửa</a>
                         <a th:href="@{/room/delete/{id}(id=${r.id})}" class="btn btn-danger btn-action flex-fill justify-content-center" sec:authorize="hasRole('ADMIN')" onclick="return confirm('Bạn có chắc muốn xóa phòng này?')"><i class="bi bi-trash"></i> Xóa</a>
 
-                        <!-- AVAILABLE: Create direct stay in top row -->
                         <a th:if="${r.status.name() == 'AVAILABLE'}" th:href="@{/checkin(roomId=${r.id})}" class="btn btn-success btn-action flex-fill justify-content-center"><i class="bi bi-box-arrow-in-right"></i> Tạo phiếu thuê</a>
                     </div>
 
-                <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/checkout/{id}(id=${r.id})}" class="btn btn-primary btn-sm">Check-out</a>
-                <a th:if="${r.status.name() == 'OCCUPIED'}" th:href="@{/admin/products/menu(roomId=${r.id})}" class="btn btn-warning btn-sm fw-bold">🍔 Gọi món</a>
-                    <!-- AVAILABLE STATE OPERATIONS (Secondary Row) -->
-                    <div th:if="${r.status.name() == 'AVAILABLE'}" class="d-flex gap-1 w-100 mt-1">
+                    <div th:if="${r.status.name() == 'AVAILABLE'}" class="d-flex gap-1 w-100 mt-1 flex-wrap">
                         <a th:href="@{/reserve(roomId=${r.id})}" class="btn btn-outline-primary btn-action flex-fill justify-content-center" style="font-size: 11px;"><i class="bi bi-calendar-plus"></i> Đặt trước</a>
                         <a th:href="@{/change-status/{id}/{status}(id=${r.id},status='CLEANING')}" class="btn btn-outline-info btn-action flex-fill justify-content-center" style="font-size: 11px;"><i class="bi bi-brush"></i> Dọn dẹp</a>
                         <a th:href="@{/change-status/{id}/{status}(id=${r.id},status='MAINTENANCE')}" class="btn btn-outline-secondary btn-action flex-fill justify-content-center" style="font-size: 11px;"><i class="bi bi-wrench"></i> Bảo trì</a>
                     </div>
 
-                    <!-- OCCUPIED STATE OPERATIONS -->
                     <div th:if="${r.status.name() == 'OCCUPIED'}" class="w-100 d-flex flex-column gap-1 mt-1">
                         <a th:href="@{/checkout/{id}(id=${r.id})}" class="btn btn-danger btn-action w-100 justify-content-center py-2"><i class="bi bi-receipt"></i> Check-out &amp; Tính tiền</a>
+
+                        <a th:href="@{/admin/products/menu(roomId=${r.id})}" class="btn btn-warning btn-action text-dark fw-bold w-100 justify-content-center"><i class="bi bi-cup-straw"></i> Gọi món dịch vụ</a>
 
                         <div class="d-flex gap-1 w-100" th:if="${r.activeCheckIn != null}">
                             <button type="button"
@@ -174,7 +185,6 @@
                         </div>
                     </div>
 
-                    <!-- RESERVED STATE OPERATIONS -->
                     <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="w-100 d-flex flex-column gap-1 mt-1">
                         <a th:href="@{/checkin/activate/{id}(id=${r.reservedCheckIn.id})}"
                            class="btn btn-success btn-action w-100 justify-content-center py-2"><i class="bi bi-check-circle"></i> Check-in nhận phòng</a>
@@ -193,19 +203,15 @@
                         </div>
                     </div>
 
-                    <!-- CLEANING STATE OPERATIONS -->
                     <a th:if="${r.status.name() == 'CLEANING'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success btn-action w-100 justify-content-center mt-1"><i class="bi bi-check2-circle"></i> Hoàn tất dọn dẹp</a>
 
-                    <!-- MAINTENANCE STATE OPERATIONS -->
                     <a th:if="${r.status.name() == 'MAINTENANCE'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success btn-action w-100 justify-content-center mt-1"><i class="bi bi-shield-check"></i> Kết thúc bảo trì</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ALL MODALS DECLARED OUTSIDE THE ROOM GRID TO PREVENT FLICKERING/HOVER BUGS -->
     <div th:each="r : ${list}">
-        <!-- Transfer Stay Modal -->
         <div th:if="${r.activeCheckIn != null || r.reservedCheckIn != null}"
              class="modal fade"
              th:id="'transferModal' + ${r.activeCheckIn != null ? r.activeCheckIn.id : r.reservedCheckIn.id}"
@@ -231,7 +237,6 @@
                                 <label class="form-label fw-bold">Chọn phòng trống mới:</label>
                                 <select name="newRoomId" class="form-select" required>
                                     <option value="">-- Chọn phòng trống --</option>
-                                    <!-- Filtering only AVAILABLE rooms using robust pre-filtered global availableRooms list -->
                                     <option th:each="availRoom : ${availableRooms}"
                                             th:value="${availRoom.id}"
                                             th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price,1,0) + ' VNĐ)'}"></option>
@@ -247,7 +252,6 @@
             </div>
         </div>
 
-        <!-- Extend Active Stay Modal -->
         <div th:if="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null}"
              class="modal fade"
              th:id="'extendModal' + ${r.activeCheckIn.id}"
@@ -284,6 +288,20 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Tìm tất cả các thẻ liên kết trong dropdown có đường dẫn gọi món chung
+        const links = document.querySelectorAll('.dropdown-menu a[href="/admin/products/menu"]');
+        links.forEach(link => {
+            // Tìm thẻ <li> bọc ngoài link đó và xóa nó đi khỏi giao diện
+            const parentLi = link.closest('li');
+            if (parentLi) {
+                parentLi.remove();
+            }
+        });
+    });
+</script>
 
 </body>
 </html>

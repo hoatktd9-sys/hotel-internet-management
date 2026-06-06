@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import com.example.demo.model.RoomType;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.RoomTypeService;
+import com.example.demo.service.ProductService; // THÊM IMPORT
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -24,12 +25,16 @@ public class RoomController {
 
     private final RoomService roomService;
     private final RoomTypeService roomTypeService;
+    private final ProductService productService; // THÊM SERVICE
 
+    // CẬP NHẬT CONSTRUCTOR INJECTION
     public RoomController(
             RoomService roomService,
-            RoomTypeService roomTypeService) {
+            RoomTypeService roomTypeService,
+            ProductService productService) {
         this.roomService = roomService;
         this.roomTypeService = roomTypeService;
+        this.productService = productService;
     }
 
     // ===== HOME =====
@@ -43,6 +48,13 @@ public class RoomController {
     @GetMapping("/rooms")
     public String list(Model model) {
         model.addAttribute("list", roomService.findAll());
+
+        // LOGIC CẢNH BÁO KHO: Đếm sản phẩm có số lượng tồn <= 10
+        long lowStockCount = productService.getAllProducts().stream()
+                .filter(p -> p.getStockQuantity() != null && p.getStockQuantity() <= 10)
+                .count();
+        model.addAttribute("lowStockCount", lowStockCount);
+
         return "list";
     }
 
@@ -102,11 +114,8 @@ public class RoomController {
         }
         room.setRoomType(managedRoomType);
 
-        // =========================================================================
-        // CHUẨN HÓA LOGIC LƯU ẢNH: TRỎ VÀO THƯ MỤC UPLOADS/IMAGES VÀ LƯU FILE TINH GỌN
-        // =========================================================================
         if (!imageFile.isEmpty()) {
-            String uploadDir = new File("uploads/images").getAbsolutePath(); // Sửa từ "uploads" -> "uploads/images"
+            String uploadDir = new File("uploads/images").getAbsolutePath();
             File dir = new File(uploadDir);
             if (!dir.exists()) {
                 dir.mkdirs();
@@ -114,7 +123,7 @@ public class RoomController {
             String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
             File saveFile = new File(dir, fileName);
             imageFile.transferTo(saveFile);
-            room.setImage(fileName); // Chỉ lưu tên file tinh gọn dưới DB
+            room.setImage(fileName);
         }
 
         room.setStatus(RoomStatus.AVAILABLE);
@@ -183,11 +192,8 @@ public class RoomController {
         Room oldRoom = roomService.findById(id);
         room.setStatus(oldRoom.getStatus());
 
-        // =========================================================================
-        // CHUẨN HÓA LOGIC CẬP NHẬT ẢNH: TRỎ VÀO THƯ MỤC UPLOADS/IMAGES KHI SỬA PHÒNG
-        // =========================================================================
         if (!imageFile.isEmpty()) {
-            String uploadDir = new File("uploads/images").getAbsolutePath(); // Sửa từ "uploads" -> "uploads/images"
+            String uploadDir = new File("uploads/images").getAbsolutePath();
             File dir = new File(uploadDir);
             if (!dir.exists()) {
                 dir.mkdirs();
@@ -274,6 +280,12 @@ public class RoomController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("selectedStatus", status);
         model.addAttribute("selectedRoomType", roomType);
+
+        // ĐỒNG BỘ LOGIC CẢNH BÁO SANG CẢ TRANG SEARCH
+        long lowStockCount = productService.getAllProducts().stream()
+                .filter(p -> p.getStockQuantity() != null && p.getStockQuantity() <= 10)
+                .count();
+        model.addAttribute("lowStockCount", lowStockCount);
 
         return "list";
     }

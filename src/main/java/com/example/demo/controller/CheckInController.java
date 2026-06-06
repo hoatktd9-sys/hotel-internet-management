@@ -39,8 +39,7 @@ public class CheckInController {
             CustomerService customerService,
             RoomService roomService,
             RoomServiceOrderRepository roomServiceOrderRepository,
-            BillRepository billRepository
-    ) {
+            BillRepository billRepository) {
         this.checkInService = checkInService;
         this.customerService = customerService;
         this.roomService = roomService;
@@ -74,8 +73,7 @@ public class CheckInController {
             @RequestParam Long customerId,
             @RequestParam Long roomId,
             @RequestParam(defaultValue = "1.0") Double expectedHours,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
         Room room = roomService.findById(roomId);
         if (room == null || room.getStatus() != RoomStatus.AVAILABLE) {
             redirectAttributes.addFlashAttribute("error", "Phòng không khả dụng để check-in!");
@@ -131,7 +129,8 @@ public class CheckInController {
                     finalCheckInTime = LocalDateTime.parse(rawDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                 } else {
                     String cleanedStr = rawDateTimeStr.replace("CH", "PM").replace("SA", "AM").trim();
-                    DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", java.util.Locale.ENGLISH);
+                    DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a",
+                            java.util.Locale.ENGLISH);
                     finalCheckInTime = LocalDateTime.parse(cleanedStr, customFormatter);
                 }
             } catch (Exception e) {
@@ -189,7 +188,8 @@ public class CheckInController {
 
     // ===== CHUYỂN PHÒNG =====
     @PostMapping("/checkin/transfer")
-    public String transferRoom(@RequestParam Long checkInId, @RequestParam Long newRoomId, RedirectAttributes redirectAttributes) {
+    public String transferRoom(@RequestParam Long checkInId, @RequestParam Long newRoomId,
+            RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(checkInId);
         Room newRoom = roomService.findById(newRoomId);
         if (checkIn == null || newRoom == null || newRoom.getStatus() != RoomStatus.AVAILABLE) {
@@ -197,8 +197,10 @@ public class CheckInController {
             return "redirect:/rooms";
         }
         roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.AVAILABLE);
-        if ("ACTIVE".equals(checkIn.getStatus())) roomService.updateStatus(newRoom.getId(), RoomStatus.OCCUPIED);
-        else if ("RESERVED".equals(checkIn.getStatus())) roomService.updateStatus(newRoom.getId(), RoomStatus.RESERVED);
+        if ("ACTIVE".equals(checkIn.getStatus()))
+            roomService.updateStatus(newRoom.getId(), RoomStatus.OCCUPIED);
+        else if ("RESERVED".equals(checkIn.getStatus()))
+            roomService.updateStatus(newRoom.getId(), RoomStatus.RESERVED);
         checkIn.setRoom(newRoom);
         checkInService.save(checkIn);
         redirectAttributes.addFlashAttribute("successMessage", "Chuyển phòng thành công!");
@@ -207,7 +209,8 @@ public class CheckInController {
 
     // ===== GIA HẠN THỜI GIAN =====
     @PostMapping("/checkin/extend")
-    public String extendCheckIn(@RequestParam Long checkInId, @RequestParam Double additionalHours, RedirectAttributes redirectAttributes) {
+    public String extendCheckIn(@RequestParam Long checkInId, @RequestParam Double additionalHours,
+            RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(checkInId);
         if (checkIn == null || !"ACTIVE".equals(checkIn.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Gia hạn thất bại!");
@@ -256,28 +259,39 @@ public class CheckInController {
     // ===== XÁC NHẬN THANH TOÁN (Feature 54, 55, 56) =====
     @PostMapping("/billing/confirm")
     public String confirmBilling(@RequestParam Long id, @RequestParam(defaultValue = "1.0") Double totalHours,
-                                 @RequestParam(defaultValue = "0.0") Double surcharge,
-                                 @RequestParam(defaultValue = "CASH") String paymentMethod,
-                                 RedirectAttributes redirectAttributes) {
+            @RequestParam(defaultValue = "0.0") Double surcharge,
+            @RequestParam(defaultValue = "CASH") String paymentMethod,
+            RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(id);
-        if (checkIn == null) return "redirect:/rooms";
+        if (checkIn == null)
+            return "redirect:/rooms";
 
         double roomPrice = checkIn.getRoom().getPrice();
         double expected = checkIn.getExpectedHours() != null ? checkIn.getExpectedHours() : 0.0;
         double roomTotal = (totalHours > expected) ? (expected * roomPrice) : (totalHours * roomPrice);
         double overtime = (totalHours > expected) ? ((totalHours - expected) * roomPrice * 1.5) : 0.0;
 
-        List<RoomServiceOrder> orders = roomServiceOrderRepository.findByRoomIdAndStatus(checkIn.getRoom().getId(), "PENDING");
+        List<RoomServiceOrder> orders = roomServiceOrderRepository.findByRoomIdAndStatus(checkIn.getRoom().getId(),
+                "PENDING");
         double serviceTotal = orders.stream().mapToDouble(RoomServiceOrder::getTotalPrice).sum();
 
         checkIn.setCheckOutTime(LocalDateTime.now());
+        checkIn.setTotalHours(totalHours);
+        checkIn.setOvertimeHours((totalHours > expected) ? (totalHours - expected) : 0.0);
+        checkIn.setOvertimeCharge(overtime);
+        checkIn.setSurcharge(surcharge);
         checkIn.setTotalPrice(roomTotal + overtime + serviceTotal + surcharge);
         checkIn.setStatus("COMPLETED");
         checkInService.save(checkIn);
 
         Bill bill = new Bill();
-        bill.setBillCode("HD-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase());
+        bill.setBillCode("HD-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-"
+                + UUID.randomUUID().toString().substring(0, 4).toUpperCase());
         bill.setCheckIn(checkIn);
+        bill.setRoomPriceReal(roomTotal);
+        bill.setOvertimePriceReal(overtime);
+        bill.setServicePriceReal(serviceTotal);
+        bill.setSurchargeReal(surcharge);
         bill.setFinalAmount(checkIn.getTotalPrice());
         bill.setPaymentMethod(paymentMethod);
         bill.setPaymentStatus("PAID");
@@ -285,7 +299,10 @@ public class CheckInController {
         bill.setStatus("PAID"); // Đảm bảo gán trạng thái hóa đơn lúc tạo mới
         billRepository.save(bill);
 
-        orders.forEach(o -> { o.setStatus("DELIVERED"); roomServiceOrderRepository.save(o); });
+        orders.forEach(o -> {
+            o.setStatus("DELIVERED");
+            roomServiceOrderRepository.save(o);
+        });
         roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.CLEANING);
 
         return "redirect:/billing/invoice/" + bill.getId();
@@ -308,8 +325,16 @@ public class CheckInController {
     // ===== XEM LỊCH SỬ THUÊ PHÒNG =====
     @PreAuthorize("hasAuthority('View_History')")
     @GetMapping("/checkin/history")
-    public String history(Model model) {
-        model.addAttribute("list", checkInService.getAll());
+    public String history(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size,
+            Model model) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("id").descending());
+        org.springframework.data.domain.Page<CheckIn> checkInPage = checkInService.getAll(pageable);
+        model.addAttribute("list", checkInPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", checkInPage.getTotalPages());
         return "checkin/history";
     }
 
@@ -346,7 +371,8 @@ public class CheckInController {
             if (bill.getCheckIn() != null && bill.getCheckIn().getRoom() != null) {
                 roomService.updateStatus(bill.getCheckIn().getRoom().getId(), RoomStatus.CLEANING);
             }
-            redirectAttributes.addFlashAttribute("successMessage", "Đã hoàn tiền thành công cho hóa đơn " + bill.getBillCode());
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã hoàn tiền thành công cho hóa đơn " + bill.getBillCode());
         } else {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy hóa đơn yêu cầu hoàn tiền.");
         }

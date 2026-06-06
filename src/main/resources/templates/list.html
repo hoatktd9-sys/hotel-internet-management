@@ -27,11 +27,11 @@
         .room-card:hover { transform: translateY(-6px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 
         /* Status Borders & Badges */
-        .room-card.status-AVAILABLE { border-top-color: #2ec4b6; }
-        .room-card.status-OCCUPIED { border-top-color: #e63946; }
-        .room-card.status-RESERVED { border-top-color: #ffb703; }
-        .room-card.status-CLEANING { border-top-color: #a2d2ff; }
-        .room-card.status-MAINTENANCE { border-top-color: #6c757d; }
+        .room-card.status-AVAILABLE { border-top-color: #2ec4b6; background-color: #ffffff; }
+        .room-card.status-OCCUPIED { border-top-color: #e63946; background-color: #fff5f5; }
+        .room-card.status-RESERVED { border-top-color: #ffb703; background-color: #fffdf5; }
+        .room-card.status-CLEANING { border-top-color: #a2d2ff; background-color: #f1f7fe; }
+        .room-card.status-MAINTENANCE { border-top-color: #6c757d; background-color: #f8f9fa; }
 
         .room-image { width: 100%; height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; border: 1px solid #e9ecef; }
         .room-name { font-size: 22px; font-weight: 800; color: #212529; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -89,14 +89,33 @@
         </a>
     </div>
 
-    <div class="filter-bar">
+    <div class="filter-bar shadow-sm">
         <span class="fw-bold text-dark me-2"><i class="bi bi-funnel-fill"></i> Bộ lọc trạng thái:</span>
-        <a href="/rooms" class="btn btn-dark btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus == null} ? 'active'">Tất cả</a>
-        <a href="/status/AVAILABLE" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus?.name() == 'AVAILABLE'} ? 'active'">Trống</a>
-        <a href="/status/OCCUPIED" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus?.name() == 'OCCUPIED'} ? 'active'">Đang sử dụng</a>
-        <a href="/status/RESERVED" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus?.name() == 'RESERVED'} ? 'active'">Đã đặt trước</a>
-        <a href="/status/CLEANING" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus?.name() == 'CLEANING'} ? 'active'">Đang dọn dẹp</a>
-        <a href="/status/MAINTENANCE" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" th:classappend="${selectedStatus?.name() == 'MAINTENANCE'} ? 'active'">Bảo trì</a>
+
+        <a th:href="@{/rooms}"
+           th:class="${selectedStatus == null} ? 'btn btn-dark btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-2 active' : 'btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-2'">
+            Tất cả <span class="badge rounded-circle" th:classappend="${selectedStatus == null} ? 'bg-white text-dark' : 'bg-dark text-white'" th:text="${allCount != null ? allCount : 0}">0</span>
+        </a>
+
+        <a th:href="@{/status/AVAILABLE}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-2" th:classappend="${selectedStatus?.name() == 'AVAILABLE'} ? 'active'">
+            Trống <span class="badge rounded-circle" th:classappend="${selectedStatus?.name() == 'AVAILABLE'} ? 'bg-white text-primary' : 'bg-primary text-white'" th:text="${availableCount != null ? availableCount : 0}">0</span>
+        </a>
+
+        <a th:href="@{/status/OCCUPIED}" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-2" th:classappend="${selectedStatus?.name() == 'OCCUPIED'} ? 'active'">
+            Đang sử dụng <span class="badge rounded-circle" th:classappend="${selectedStatus?.name() == 'OCCUPIED'} ? 'bg-white text-danger' : 'bg-danger text-white'" th:text="${occupiedCount != null ? occupiedCount : 0}">0</span>
+        </a>
+
+        <a th:href="@{/status/RESERVED}" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-2" th:classappend="${selectedStatus?.name() == 'RESERVED'} ? 'active'">
+            Đặt trước <span class="badge rounded-circle" th:classappend="${selectedStatus?.name() == 'RESERVED'} ? 'bg-white text-warning' : 'bg-warning text-dark'" th:text="${reservedCount != null ? reservedCount : 0}">0</span>
+        </a>
+
+        <a th:href="@{/status/CLEANING}" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-2" th:classappend="${selectedStatus?.name() == 'CLEANING'} ? 'active'">
+            Đang dọn dẹp <span class="badge rounded-circle" th:classappend="${selectedStatus?.name() == 'CLEANING'} ? 'bg-white text-info' : 'bg-info text-white'" th:text="${cleaningCount != null ? cleaningCount : 0}">0</span>
+        </a>
+
+        <a th:href="@{/status/MAINTENANCE}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-2" th:classappend="${selectedStatus?.name() == 'MAINTENANCE'} ? 'active'">
+            Bảo trì <span class="badge rounded-circle" th:classappend="${selectedStatus?.name() == 'MAINTENANCE'} ? 'bg-white text-secondary' : 'bg-secondary text-white'" th:text="${maintenanceCount != null ? maintenanceCount : 0}">0</span>
+        </a>
     </div>
 
     <div class="room-grid">
@@ -116,7 +135,7 @@
 
                 <div class="room-info">
                     <i class="bi bi-cash-stack text-success"></i>
-                    <b>Giá:</b> <span class="fw-bold text-success" th:text="${#numbers.formatDecimal(r.price,1,0)}"></span> VNĐ / giờ
+                    <b>Giá:</b> <span class="fw-bold text-success" th:text="${#numbers.formatDecimal(r.price, 1, 'POINT', 0, 'COMMA')}"></span> VNĐ / giờ
                 </div>
                 <div class="room-info">
                     <i class="bi bi-display text-primary"></i>
@@ -169,42 +188,29 @@
                         <a th:href="@{/admin/products/menu(roomId=${r.id})}" class="btn btn-warning btn-action text-dark fw-bold w-100 justify-content-center"><i class="bi bi-cup-straw"></i> Gọi món dịch vụ</a>
 
                         <div class="d-flex gap-1 w-100" th:if="${r.activeCheckIn != null}">
-                            <button type="button"
-                                    class="btn btn-primary btn-action flex-fill justify-content-center"
-                                    data-bs-toggle="modal"
-                                    th:data-bs-target="'#transferModal' + ${r.activeCheckIn.id}">
+                            <button type="button" class="btn btn-primary btn-action flex-fill justify-content-center" data-bs-toggle="modal" th:data-bs-target="'#transferModal' + ${r.activeCheckIn.id}">
                                 <i class="bi bi-arrow-left-right"></i> Chuyển phòng
                             </button>
 
-                            <button type="button"
-                                    class="btn btn-warning btn-action text-white flex-fill justify-content-center"
-                                    data-bs-toggle="modal"
-                                    th:data-bs-target="'#extendModal' + ${r.activeCheckIn.id}">
+                            <button type="button" class="btn btn-warning btn-action text-white flex-fill justify-content-center" data-bs-toggle="modal" th:data-bs-target="'#extendModal' + ${r.activeCheckIn.id}">
                                 <i class="bi bi-clock-history"></i> Gia hạn
                             </button>
                         </div>
                     </div>
 
                     <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="w-100 d-flex flex-column gap-1 mt-1">
-                        <a th:href="@{/checkin/activate/{id}(id=${r.reservedCheckIn.id})}"
-                           class="btn btn-success btn-action w-100 justify-content-center py-2"><i class="bi bi-check-circle"></i> Check-in nhận phòng</a>
+                        <a th:href="@{/checkin/activate/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-success btn-action w-100 justify-content-center py-2"><i class="bi bi-check-circle"></i> Check-in nhận phòng</a>
 
                         <div class="d-flex gap-1 w-100">
-                            <button type="button"
-                                    class="btn btn-primary btn-action flex-fill justify-content-center"
-                                    data-bs-toggle="modal"
-                                    th:data-bs-target="'#transferModal' + ${r.reservedCheckIn.id}">
+                            <button type="button" class="btn btn-primary btn-action flex-fill justify-content-center" data-bs-toggle="modal" th:data-bs-target="'#transferModal' + ${r.reservedCheckIn.id}">
                                 <i class="bi bi-arrow-left-right"></i> Đổi phòng
                             </button>
 
-                            <a th:href="@{/booking/cancel/{id}(id=${r.reservedCheckIn.id})}"
-                               class="btn btn-outline-danger btn-action flex-fill justify-content-center"
-                               onclick="return confirm('Bạn chắc chắn muốn hủy đặt phòng này?')"><i class="bi bi-x-circle"></i> Hủy đặt</a>
+                            <a th:href="@{/booking/cancel/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-outline-danger btn-action flex-fill justify-content-center" onclick="return confirm('Bạn chắc chắn muốn hủy đặt phòng này?')"><i class="bi bi-x-circle"></i> Hủy đặt</a>
                         </div>
                     </div>
 
                     <a th:if="${r.status.name() == 'CLEANING'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success btn-action w-100 justify-content-center mt-1"><i class="bi bi-check2-circle"></i> Hoàn tất dọn dẹp</a>
-
                     <a th:if="${r.status.name() == 'MAINTENANCE'}" th:href="@{/room/available/{id}(id=${r.id})}" class="btn btn-success btn-action w-100 justify-content-center mt-1"><i class="bi bi-shield-check"></i> Kết thúc bảo trì</a>
                 </div>
             </div>
@@ -212,10 +218,8 @@
     </div>
 
     <div th:each="r : ${list}">
-        <div th:if="${r.activeCheckIn != null || r.reservedCheckIn != null}"
-             class="modal fade"
-             th:id="'transferModal' + ${r.activeCheckIn != null ? r.activeCheckIn.id : r.reservedCheckIn.id}"
-             tabindex="-1" aria-hidden="true">
+
+        <div th:if="${r.activeCheckIn != null || r.reservedCheckIn != null}" class="modal fade" th:id="'transferModal' + ${r.activeCheckIn != null ? r.activeCheckIn.id : r.reservedCheckIn.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <form th:action="@{/checkin/transfer}" method="post">
@@ -237,9 +241,7 @@
                                 <label class="form-label fw-bold">Chọn phòng trống mới:</label>
                                 <select name="newRoomId" class="form-select" required>
                                     <option value="">-- Chọn phòng trống --</option>
-                                    <option th:each="availRoom : ${availableRooms}"
-                                            th:value="${availRoom.id}"
-                                            th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price,1,0) + ' VNĐ)'}"></option>
+                                    <option th:each="availRoom : ${availableRooms}" th:value="${availRoom.id}" th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price, 1, 'POINT', 0, 'COMMA') + ' VNĐ)'}"></option>
                                 </select>
                             </div>
                         </div>
@@ -252,10 +254,7 @@
             </div>
         </div>
 
-        <div th:if="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null}"
-             class="modal fade"
-             th:id="'extendModal' + ${r.activeCheckIn.id}"
-             tabindex="-1" aria-hidden="true">
+        <div th:if="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null}" class="modal fade" th:id="'extendModal' + ${r.activeCheckIn.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <form th:action="@{/checkin/extend}" method="post">
@@ -286,15 +285,14 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Tìm tất cả các thẻ liên kết trong dropdown có đường dẫn gọi món chung
         const links = document.querySelectorAll('.dropdown-menu a[href="/admin/products/menu"]');
         links.forEach(link => {
-            // Tìm thẻ <li> bọc ngoài link đó và xóa nó đi khỏi giao diện
             const parentLi = link.closest('li');
             if (parentLi) {
                 parentLi.remove();

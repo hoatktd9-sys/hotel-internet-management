@@ -113,6 +113,19 @@
         </div>
 
         <div class="dropdown" sec:authorize="hasRole('ADMIN')">
+            <button class="btn btn-outline-info dropdown-toggle fw-bold text-dark d-flex align-items-center gap-1"
+                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-graph-up-arrow"></i> Báo Cáo &amp; Thống Kê
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item fw-bold" href="/admin/reports/dashboard"><i class="bi bi-speedometer2"></i> Dashboard tổng quan</a></li>
+                <li><a class="dropdown-item fw-bold" href="/admin/reports/revenue"><i class="bi bi-cash-coin"></i> Doanh thu doanh số</a></li>
+                <li><a class="dropdown-item fw-bold" href="/admin/reports/rooms"><i class="bi bi-house-gear"></i> Tần suất sử dụng phòng</a></li>
+                <li><a class="dropdown-item fw-bold" href="/admin/reports/products"><i class="bi bi-cart-check"></i> Sản phẩm bán chạy</a></li>
+            </ul>
+        </div>
+
+        <div class="dropdown" sec:authorize="hasRole('ADMIN')">
             <button class="btn btn-outline-dark dropdown-toggle fw-bold d-flex align-items-center gap-1"
                     type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-person-badge"></i> Nhóm Nhân Viên

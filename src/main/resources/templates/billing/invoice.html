@@ -96,7 +96,7 @@
                     <b>Tiền giờ dịch vụ phòng sử dụng</b> <br>
                     <small class="text-muted" th:text="'Mở máy: ' + ${#temporals.format(bill.checkIn.checkInTime, 'dd/MM/yyyy HH:mm:ss')} + ' - Trả máy: ' + ${#temporals.format(bill.checkIn.checkOutTime, 'dd/MM/yyyy HH:mm:ss')}"></small>
                 </td>
-                <td class="text-end fw-bold" th:text="${bill.checkIn.room != null ? #numbers.formatDecimal(bill.checkIn.room.price,1,0) : '0'}">0</td>
+                <td class="text-end fw-bold" th:text="${bill.checkIn.room != null ? #numbers.formatDecimal(bill.checkIn.room.price, 1, 'POINT', 0, 'COMMA') : '0'}">0</td>
             </tr>
 
             <tr th:if="${bill.finalAmount > bill.checkIn.room.price}">
@@ -105,12 +105,12 @@
                     <small class="text-muted">Bao gồm dịch vụ đồ ăn gọi thêm hoặc tiền bù giờ tính lũy tiến hệ số</small>
                 </td>
                 <td class="text-end fw-bold text-danger"
-                    th:text="${#numbers.formatDecimal(bill.finalAmount - bill.checkIn.room.price, 1, 0)}">0</td>
+                    th:text="${#numbers.formatDecimal(bill.finalAmount - bill.checkIn.room.price, 1, 'POINT', 0, 'COMMA')}">0</td>
             </tr>
 
             <tr class="fs-5 table-success">
                 <th class="text-success text-uppercase">Tổng tiền đã thanh toán:</th>
-                <th class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(bill.finalAmount,1,0)} + ' VNĐ'">0 VNĐ</th>
+                <th class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(bill.finalAmount, 1, 'POINT', 0, 'COMMA')} + ' VNĐ'">0 VNĐ</th>
             </tr>
             </tbody>
         </table>

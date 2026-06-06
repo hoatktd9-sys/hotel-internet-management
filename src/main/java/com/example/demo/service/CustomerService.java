@@ -46,6 +46,17 @@ public class CustomerService {
         );
     }
 
+    // ===== TÌM KIẾM PHÂN TRANG =====
+    public org.springframework.data.domain.Page<Customer> search(String keyword, org.springframework.data.domain.Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return repository.findAll(pageable);
+        }
+        String kw = keyword.trim();
+        return repository.findByFullNameContainingIgnoreCaseOrPhoneNumberContainingOrIdentityNumberContaining(
+                kw, kw, kw, pageable
+        );
+    }
+
     // ===== ĐÁNH DẤU / HỦY VIP (MỚI THÊM) =====
     public void toggleVip(Long id) {
         Customer customer = findById(id);

@@ -71,6 +71,21 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Phân trang -->
+        <nav aria-label="Page navigation" th:if="${totalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link" th:href="@{/customers(page=${currentPage - 1}, keyword=${keyword})}">Trước</a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${currentPage == i} ? 'active'">
+                    <a class="page-link" th:href="@{/customers(page=${i}, keyword=${keyword})}" th:text="${i + 1}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/customers(page=${currentPage + 1}, keyword=${keyword})}">Sau</a>
+                </li>
+            </ul>
+        </nav>
     </div>
 </div>
 

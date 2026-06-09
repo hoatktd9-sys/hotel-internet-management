@@ -10,6 +10,7 @@ import com.example.demo.repository.RoomServiceOrderRepository;
 import com.example.demo.service.CheckInService;
 import com.example.demo.service.CustomerService;
 import com.example.demo.service.RoomService;
+import com.example.demo.service.ActivityLogService; // Thêm Service ghi Log
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -33,18 +34,21 @@ public class CheckInController {
     private final RoomService roomService;
     private final RoomServiceOrderRepository roomServiceOrderRepository;
     private final BillRepository billRepository;
+    private final ActivityLogService activityLogService; // Khai báo Service ghi Log
 
     public CheckInController(
             CheckInService checkInService,
             CustomerService customerService,
             RoomService roomService,
             RoomServiceOrderRepository roomServiceOrderRepository,
-            BillRepository billRepository) {
+            BillRepository billRepository,
+            ActivityLogService activityLogService) { // Inject vào Constructor
         this.checkInService = checkInService;
         this.customerService = customerService;
         this.roomService = roomService;
         this.roomServiceOrderRepository = roomServiceOrderRepository;
         this.billRepository = billRepository;
+        this.activityLogService = activityLogService;
     }
 
     // ===== HÀM ĐIỀU HƯỚNG NÚT TẠO PHIẾU THUÊ =====
@@ -89,6 +93,10 @@ public class CheckInController {
 
         roomService.updateStatus(roomId, RoomStatus.OCCUPIED);
         checkInService.save(checkIn);
+
+        // [LOG] Ghi nhận hành động Tạo phiếu thuê trực tiếp
+        activityLogService.log("CHECKIN_DIRECT", "Tạo phiếu mở máy trực tiếp tại phòng "
+                + room.getRoomName() + " cho khách hàng ID: " + customerId + " (" + expectedHours + " giờ)");
 
         redirectAttributes.addFlashAttribute("successMessage", "Tạo phiếu thuê và nhận phòng thành công!");
         return "redirect:/rooms";
@@ -150,6 +158,10 @@ public class CheckInController {
         roomService.updateStatus(roomId, RoomStatus.AVAILABLE);
         checkInService.save(checkIn);
 
+        // [LOG] Ghi nhận hành động Đặt trước phòng máy
+        activityLogService.log("RESERVE_ROOM", "Đặt lịch trước phòng "
+                + room.getRoomName() + " cho khách hàng ID: " + customerId + ", thời gian dự kiến: " + finalCheckInTime);
+
         redirectAttributes.addFlashAttribute("successMessage", "Đặt trước phòng thành công!");
         return "redirect:/rooms";
     }
@@ -166,6 +178,11 @@ public class CheckInController {
         checkIn.setCheckInTime(LocalDateTime.now());
         roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.OCCUPIED);
         checkInService.save(checkIn);
+
+        // [LOG] Kích hoạt nhận máy đã booking trước đó
+        activityLogService.log("ACTIVATE_RESERVATION", "Khách nhận máy đặt trước tại phòng "
+                + checkIn.getRoom().getRoomName() + " (Mã phiếu thuê: " + id + ")");
+
         redirectAttributes.addFlashAttribute("successMessage", "Check-in khách thành công!");
         return "redirect:/rooms";
     }
@@ -182,6 +199,11 @@ public class CheckInController {
         checkIn.setCheckOutTime(LocalDateTime.now());
         roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.AVAILABLE);
         checkInService.save(checkIn);
+
+        // [LOG] Hủy lịch đặt trước máy
+        activityLogService.log("CANCEL_RESERVATION", "Hủy phiếu đặt lịch trước phòng máy "
+                + checkIn.getRoom().getRoomName() + " (Mã phiếu thuê: " + id + ")");
+
         redirectAttributes.addFlashAttribute("successMessage", "Hủy đặt phòng thành công!");
         return "redirect:/rooms";
     }
@@ -189,13 +211,14 @@ public class CheckInController {
     // ===== CHUYỂN PHÒNG =====
     @PostMapping("/checkin/transfer")
     public String transferRoom(@RequestParam Long checkInId, @RequestParam Long newRoomId,
-            RedirectAttributes redirectAttributes) {
+                               RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(checkInId);
         Room newRoom = roomService.findById(newRoomId);
         if (checkIn == null || newRoom == null || newRoom.getStatus() != RoomStatus.AVAILABLE) {
             redirectAttributes.addFlashAttribute("error", "Chuyển phòng thất bại!");
             return "redirect:/rooms";
         }
+        String oldRoomName = checkIn.getRoom().getRoomName();
         roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.AVAILABLE);
         if ("ACTIVE".equals(checkIn.getStatus()))
             roomService.updateStatus(newRoom.getId(), RoomStatus.OCCUPIED);
@@ -203,6 +226,11 @@ public class CheckInController {
             roomService.updateStatus(newRoom.getId(), RoomStatus.RESERVED);
         checkIn.setRoom(newRoom);
         checkInService.save(checkIn);
+
+        // [LOG] Chuyển đổi phòng/máy tính
+        activityLogService.log("TRANSFER_ROOM", "Chuyển khách hàng từ phòng "
+                + oldRoomName + " sang phòng trống mới " + newRoom.getRoomName() + " (Phiếu: " + checkInId + ")");
+
         redirectAttributes.addFlashAttribute("successMessage", "Chuyển phòng thành công!");
         return "redirect:/rooms";
     }
@@ -210,7 +238,7 @@ public class CheckInController {
     // ===== GIA HẠN THỜI GIAN =====
     @PostMapping("/checkin/extend")
     public String extendCheckIn(@RequestParam Long checkInId, @RequestParam Double additionalHours,
-            RedirectAttributes redirectAttributes) {
+                                RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(checkInId);
         if (checkIn == null || !"ACTIVE".equals(checkIn.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Gia hạn thất bại!");
@@ -218,6 +246,11 @@ public class CheckInController {
         }
         checkIn.setExpectedHours(checkIn.getExpectedHours() + additionalHours);
         checkInService.save(checkIn);
+
+        // [LOG] Gia hạn phiên chơi máy
+        activityLogService.log("EXTEND_ROOM", "Gia hạn thêm +" + additionalHours
+                + " giờ cho phòng " + checkIn.getRoom().getRoomName() + " (Tổng giờ mới: " + checkIn.getExpectedHours() + "h)");
+
         redirectAttributes.addFlashAttribute("successMessage", "Gia hạn thành công!");
         return "redirect:/rooms";
     }
@@ -259,9 +292,9 @@ public class CheckInController {
     // ===== XÁC NHẬN THANH TOÁN (Feature 54, 55, 56) =====
     @PostMapping("/billing/confirm")
     public String confirmBilling(@RequestParam Long id, @RequestParam(defaultValue = "1.0") Double totalHours,
-            @RequestParam(defaultValue = "0.0") Double surcharge,
-            @RequestParam(defaultValue = "CASH") String paymentMethod,
-            RedirectAttributes redirectAttributes) {
+                                 @RequestParam(defaultValue = "0.0") Double surcharge,
+                                 @RequestParam(defaultValue = "CASH") String paymentMethod,
+                                 RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(id);
         if (checkIn == null)
             return "redirect:/rooms";
@@ -296,7 +329,7 @@ public class CheckInController {
         bill.setPaymentMethod(paymentMethod);
         bill.setPaymentStatus("PAID");
         bill.setPaymentTime(LocalDateTime.now());
-        bill.setStatus("PAID"); // Đảm bảo gán trạng thái hóa đơn lúc tạo mới
+        bill.setStatus("PAID");
         billRepository.save(bill);
 
         orders.forEach(o -> {
@@ -304,6 +337,11 @@ public class CheckInController {
             roomServiceOrderRepository.save(o);
         });
         roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.CLEANING);
+
+        // [LOG] Xác nhận thanh toán & In hóa đơn hóa đơn
+        activityLogService.log("CHECKOUT_BILLING", "Hoàn tất thanh toán phòng "
+                + checkIn.getRoom().getRoomName() + ", Xuất hóa đơn: " + bill.getBillCode()
+                + " (Tổng số tiền: " + String.format("%,.0f", bill.getFinalAmount()) + " VNĐ)");
 
         return "redirect:/billing/invoice/" + bill.getId();
     }
@@ -371,11 +409,24 @@ public class CheckInController {
             if (bill.getCheckIn() != null && bill.getCheckIn().getRoom() != null) {
                 roomService.updateStatus(bill.getCheckIn().getRoom().getId(), RoomStatus.CLEANING);
             }
+
+            // [LOG] Admin phê duyệt hoàn tiền hóa đơn
+            activityLogService.log("REFUND_BILL", "ADMIN đã duyệt hoàn tiền thành công cho mã hóa đơn: "
+                    + bill.getBillCode() + " (Số tiền hoàn lại: " + String.format("%,.0f", bill.getFinalAmount()) + " VNĐ)");
+
             redirectAttributes.addFlashAttribute("successMessage",
                     "Đã hoàn tiền thành công cho hóa đơn " + bill.getBillCode());
         } else {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy hóa đơn yêu cầu hoàn tiền.");
         }
         return "redirect:/billing/history";
+    }
+
+    // ===== TẠO ĐIỂM ĐẦU CUỐI XEM DANH SÁCH LOG DÀNH CHO ADMIN =====
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/logs")
+    public String viewSystemLogs(Model model) {
+        model.addAttribute("logs", activityLogService.getAllLogs());
+        return "admin/log-list";
     }
 }

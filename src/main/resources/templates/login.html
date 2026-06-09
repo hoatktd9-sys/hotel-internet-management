@@ -1,97 +1,253 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập - Quản lý phòng internet</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Trang Đăng Nhập Neon Glass</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         body {
-            /* Đồng bộ với màu nền xám nhạt nhẹ của trang quản lý trong hình */
-            background-color: #f8f9fa;
-            color: #212529;
             display: flex;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1a3a5a 0%, #0a1525 100%);
+            overflow: hidden;
         }
-        .login-card {
-            /* Giống style đổ bóng và bo góc của các card Room 101, TestRoom */
-            background-color: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
+
+        /* Hiệu ứng ánh sáng nền */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: #00f2fe;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.2;
+            z-index: -1;
         }
-        .login-card h2 {
+
+        .login-container {
+            position: relative;
+            width: 400px;
+            padding: 50px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.3);
             text-align: center;
+            color: white;
+        }
+
+        /* Viền Neon */
+        .login-container::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 32px;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            z-index: -1;
+            filter: blur(5px);
+            opacity: 0.5;
+        }
+
+        /* Phần Tiêu đề được tách ra và làm đẹp */
+        .title-container {
             margin-bottom: 30px;
-            font-weight: 700;
-            color: #212529;
         }
-        .form-label {
-            font-weight: 600;
-            color: #495057;
+
+        .title-container h2 {
+            font-size: 22px;
+            color: #00f2fe;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+            margin-bottom: 5px;
+            text-transform: uppercase;
         }
-        .form-control {
-            background-color: #fff;
-            border: 1px solid #ced4da;
-            color: #212529;
-            padding: 10px 12px;
-            border-radius: 8px;
+
+        .title-container h3 {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            letter-spacing: 2px;
         }
-        .form-control:focus {
-            background-color: #fff;
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+
+        /* Input Fields */
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+            text-align: left;
         }
-        .btn-primary {
-            /* Đồng bộ với màu nút "Check-in" xanh dương tươi trên hình */
-            background-color: #0d6efd;
-            border: none;
-            width: 100%;
-            padding: 12px;
-            font-weight: 600;
-            border-radius: 8px;
-            transition: background-color 0.2s ease;
-        }
-        .btn-primary:hover {
-            background-color: #0b5ed7;
-        }
-        .alert {
-            padding: 12px;
-            margin-bottom: 20px;
-            border-radius: 8px;
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
             font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            padding-left: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            /* Chừa chỗ cho icon */
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #00f2fe;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Icons */
+        .icon {
+            position: absolute;
+            left: 20px;
+            top: 48px;
+            /* Căn chỉnh cho icon nằm giữa thẻ input */
+            opacity: 0.5;
+            pointer-events: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus+.icon {
+            opacity: 1;
+            box-shadow: 0 0 5px #00f2fe;
+            /* Thêm hiệu ứng sáng cho icon khi focus */
+        }
+
+        .user-icon {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .user-icon::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: -4px;
+            width: 24px;
+            height: 12px;
+            background: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .lock-icon {
+            width: 16px;
+            height: 14px;
+            background: white;
+            border-radius: 3px;
+        }
+
+        .lock-icon::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 3px;
+            width: 10px;
+            height: 8px;
+            border: 2px solid white;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+        }
+
+        /* Button LOGIN */
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 50px;
+            color: #0a1525;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.7);
+            transform: translateY(-2px);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 12px 20px;
+            margin-top: 15px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+            display: block;
+        }
+        .alert-danger {
+            background: rgba(255, 75, 75, 0.15);
+            border: 1px solid rgba(255, 75, 75, 0.3);
+            color: #ff4b4b;
+            box-shadow: 0 0 15px rgba(255, 75, 75, 0.2);
+        }
+        .alert-success {
+            background: rgba(75, 255, 75, 0.15);
+            border: 1px solid rgba(75, 255, 75, 0.3);
+            color: #4bff4b;
+            box-shadow: 0 0 15px rgba(75, 255, 75, 0.2);
         }
     </style>
 </head>
+
 <body>
-
-<div class="login-card">
-    <h2>Quản lý phòng internet</h2>
-
-    <div th:if="${param.error}" class="alert alert-danger">
-        Tài khoản hoặc mật khẩu không chính xác.
-    </div>
-    <div th:if="${param.logout}" class="alert alert-success">
-        Bạn đã đăng xuất thành công.
-    </div>
-
-    <form th:action="@{/login}" method="post">
-        <div class="mb-3">
-            <label for="username" class="form-label">Tài khoản</label>
-            <input type="text" class="form-control" id="username" name="username" placeholder="Nhập tài khoản..." required autofocus>
+    <div class="login-container">
+        <div class="title-container">
+            <h2>QUẢN LÝ INTERNET HOTEL</h2>
+            <h3>ĐĂNG NHẬP</h3>
+            <div th:if="${param.error}" class="alert alert-danger">
+                Tài khoản hoặc mật khẩu không chính xác.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-success">
+                Bạn đã đăng xuất thành công.
+            </div>
         </div>
-        <div class="mb-4">
-            <label for="password" class="form-label">Mật khẩu</label>
-            <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu..." required>
-        </div>
-        <button type="submit" class="btn btn-primary">Đăng nhập</button>
-    </form>
-</div>
 
+        <form th:action="@{/login}" method="post">
+            <div class="input-group">
+                <label>Tên Đăng Nhập</label>
+                <input name="username" type="text" placeholder="Username" required>
+                <div class="icon user-icon"></div>
+            </div>
+
+            <div class="input-group">
+                <label>Mật khẩu</label>
+                <input name="password" type="password" placeholder="••••••••••••" required>
+                <div class="icon lock-icon"></div>
+            </div>
+
+            <button type="submit" class="login-btn">LOGIN</button>
+        </form>
+    </div>
 </body>
+
 </html>

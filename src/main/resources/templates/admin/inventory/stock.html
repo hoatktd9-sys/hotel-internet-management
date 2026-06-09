@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Quản lý tồn kho khách sạn')}"></head>
+<body class="bg-light">
+
+<style>
+    @keyframes pulse-animation {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(0.95); background-color: #ffda6a; }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    .animate-pulse {
+        animation: pulse-animation 1.5s infinite ease-in-out;
+        font-weight: bold;
+    }
+</style>
+
+<div class="container mt-4">
+    <div th:replace="~{fragments/layout :: navbar('Quản lý kho')}"></div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show my-3" role="alert">
+        <i class="bi bi-check-circle-fill"></i> <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show my-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-box-seam"></i> QUẢN LÝ TỒN KHO SẢN PHẨM</h2>
+        <div>
+            <a href="/rooms" class="btn btn-secondary shadow-sm"><i class="bi bi-arrow-left"></i> Quay lại sơ đồ</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm p-3 border-0 rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle bg-white m-0">
+                <thead class="table-dark">
+                <tr>
+                    <th class="py-3">Mã SP</th>
+                    <th class="py-3">Tên sản phẩm</th>
+                    <th class="py-3">Danh mục</th>
+                    <th class="py-3 text-end">Giá bán</th>
+                    <th class="py-3 text-center">Số lượng tồn</th>
+                    <th class="py-3 text-center">Trạng thái kho</th>
+                    <th class="py-3 text-center">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="product : ${products}">
+                    <td class="fw-bold text-primary" th:text="'SP-' + ${product.id}">SP-01</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 d-flex align-items-center justify-content-center bg-secondary-subtle text-secondary rounded-2" style="width: 40px; height: 40px;">
+                                <i class="bi bi-box fs-5"></i>
+                            </div>
+                            <span class="fw-bold text-dark" th:text="${product.name}">Mì tôm 1 trứng</span>
+                        </div>
+                    </td>
+                    <td th:text="${product.category != null ? product.category.name : 'Chưa phân loại'}">Đồ ăn</td>
+                    <td class="text-end fw-bold text-danger" th:text="${#numbers.formatDecimal(product.price,1,0)} + ' đ'">0 đ</td>
+                    <td class="text-center fw-bold fs-5" th:text="${product.stockQuantity}">0</td>
+
+                    <td class="text-center">
+                        <span th:if="${product.stockQuantity == 0}" class="badge bg-danger text-white px-2 py-1 shadow-sm">
+                            <i class="bi bi-x-circle-fill"></i> Hết hàng
+                        </span>
+
+                        <span th:if="${product.stockQuantity > 0 && product.stockQuantity <= 10}"
+                              class="badge bg-warning text-dark border border-warning px-2 py-1 shadow-sm animate-pulse">
+                            <i class="bi bi-exclamation-triangle-fill text-danger"></i> Sắp hết hàng
+                        </span>
+
+                        <span th:if="${product.stockQuantity > 10}" class="badge bg-success-subtle text-success border border-success px-2 py-1">
+                            <i class="bi bi-check-circle"></i> Còn hàng
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-primary shadow-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#importModal"
+                                th:data-id="${product.id}"
+                                th:data-name="${product.name}">
+                            <i class="bi bi-plus-circle"></i> Nhập kho
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(products)}">
+                    <td colspan="7" class="text-center text-muted py-4">Không tìm thấy sản phẩm nào trong kho dữ liệu.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="importModalLabel"><i class="bi bi-download"></i> Phiếu Nhập Kho Hàng Hóa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/admin/inventory/import}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="productId" id="modalProductId">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Sản phẩm nhập kho</label>
+                        <input type="text" id="modalProductName" class="form-control bg-light fw-bold text-primary" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nhà cung cấp <span class="text-danger">*</span></label>
+                        <select name="supplierId" class="form-select" required>
+                            <option value="">-- Chọn nhà cung cấp --</option>
+                            <option th:each="sup : ${suppliers}" th:value="${sup.id}" th:text="${sup.name}"></option>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Số lượng nhập <span class="text-danger">*</span></label>
+                            <input type="number" name="quantity" class="form-control" min="1" placeholder="Ví dụ: 50" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Giá nhập lẻ (đ) <span class="text-danger">*</span></label>
+                            <input type="number" name="price" class="form-control" min="0" placeholder="Ví dụ: 7000" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ghi chú phiếu nhập</label>
+                        <textarea name="note" class="form-control" rows="2" placeholder="Nhập lý do nhập kho hoặc thông tin lô hàng..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4"><i class="bi bi-save"></i> Xác nhận nhập</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const importModal = document.getElementById('importModal');
+    if (importModal) {
+        importModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const productId = button.getAttribute('data-id');
+            const productName = button.getAttribute('data-name');
+
+            const modalProductIdInput = importModal.querySelector('#modalProductId');
+            const modalProductNameInput = importModal.querySelector('#modalProductName');
+
+            modalProductIdInput.value = productId;
+            modalProductNameInput.value = productName;
+        });
+    }
+</script>
+
+</body>
+</html>

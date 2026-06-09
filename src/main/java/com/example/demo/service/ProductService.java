@@ -1,8 +1,10 @@
 package com.example.demo.service;
 
+import com.example.demo.model.InventoryTransaction;
 import com.example.demo.model.Product;
+import com.example.demo.repository.InventoryTransactionRepository;
 import com.example.demo.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -11,8 +13,15 @@ import java.util.Optional;
 @Service
 public class ProductService {
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+    private final InventoryTransactionRepository transactionRepository;
+
+    // Thay đổi dùng Constructor Injection thay cho @Autowired cũ để tối ưu hiệu năng và dễ mở rộng
+    public ProductService(ProductRepository productRepository,
+                          InventoryTransactionRepository transactionRepository) {
+        this.productRepository = productRepository;
+        this.transactionRepository = transactionRepository;
+    }
 
     // Chỉ lấy các sản phẩm đang có active = true ra trang quản trị và thực đơn
     public List<Product> getAllProducts() {
@@ -59,7 +68,7 @@ public class ProductService {
         }
     }
 
-    // ĐIỂM 2: Hàm xử lý kiểm tra tồn kho và trừ kho khi khách đặt món (Feature 38)
+    // NÂNG CẤP FEATURE 43: Tự động ghi nhận lịch sử giao dịch EXPORT khi trừ kho thành công
     @Transactional
     public void decreaseStock(Long productId, Integer quantity) {
         Product product = getProductById(productId);
@@ -72,8 +81,26 @@ public class ProductService {
             throw new RuntimeException("Sản phẩm '" + product.getName() + "' trong kho không đủ số lượng phục vụ (Hiện còn: " + product.getStockQuantity() + ")!");
         }
 
-        // Thực hiện trừ kho
+        // 1. Thực hiện trừ kho của sản phẩm
         product.setStockQuantity(product.getStockQuantity() - quantity);
         productRepository.save(product);
+
+        // 2. TỰ ĐỘNG XUẤT KHO: Tạo bản ghi log giao dịch xuất kho để lưu vết
+        InventoryTransaction tx = new InventoryTransaction();
+        tx.setProduct(product);
+        tx.setTransactionType("EXPORT"); // Đánh dấu loại giao dịch là XUẤT KHO
+        tx.setQuantity(quantity);
+        tx.setPrice(product.getPrice()); // Lưu giá bán tại thời điểm xuất
+        tx.setNote("Hệ thống tự động trừ kho do khách đặt món dịch vụ");
+
+        // Lấy tên tài khoản nhân viên/khách hàng thực hiện thao tác
+        try {
+            String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+            tx.setOperator(currentUsername);
+        } catch (Exception e) {
+            tx.setOperator("System"); // Phòng hờ nếu hệ thống tự chạy không có context đăng nhập
+        }
+
+        transactionRepository.save(tx);
     }
 }

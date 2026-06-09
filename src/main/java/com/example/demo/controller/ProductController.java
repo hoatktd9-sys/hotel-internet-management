@@ -7,6 +7,7 @@ import com.example.demo.repository.RoomServiceOrderRepository;
 import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.ServiceCategoryRepository;
 import com.example.demo.service.ProductService;
+import com.example.demo.service.ActivityLogService; // IMPORT SERVICE MỚI
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -23,17 +24,20 @@ public class ProductController {
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final RoomServiceOrderRepository roomServiceOrderRepository;
     private final RoomRepository roomRepository;
+    private final ActivityLogService activityLogService; // INJECT SERVICE MỚI
 
     public ProductController(
             ProductService productService,
             ServiceCategoryRepository serviceCategoryRepository,
             RoomServiceOrderRepository roomServiceOrderRepository,
-            RoomRepository roomRepository
+            RoomRepository roomRepository,
+            ActivityLogService activityLogService // CẬP NHẬT CONSTRUCTOR
     ) {
         this.productService = productService;
         this.serviceCategoryRepository = serviceCategoryRepository;
         this.roomServiceOrderRepository = roomServiceOrderRepository;
         this.roomRepository = roomRepository;
+        this.activityLogService = activityLogService;
     }
 
     // 1. Hiển thị danh sách sản phẩm & Form thêm mới
@@ -66,6 +70,10 @@ public class ProductController {
             }
             product.setActive(true);
             productService.saveProduct(product);
+
+            // Ghi log hành động
+            activityLogService.log("PRODUCT_SAVE", "Cập nhật/Thêm sản phẩm: " + product.getName());
+
             redirectAttributes.addFlashAttribute("successMessage", "Lưu thông tin sản phẩm vào thực đơn thành công!");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -96,6 +104,7 @@ public class ProductController {
     public String deleteProduct(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         try {
             productService.deleteProduct(id);
+            activityLogService.log("PRODUCT_DELETE", "Đã xóa sản phẩm ID: " + id);
             redirectAttributes.addFlashAttribute("successMessage", "Xóa món ăn khỏi thực đơn thành công!");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -113,7 +122,7 @@ public class ProductController {
         return "../templates/admin/product/view-menu";
     }
 
-    // 6. [FEATURE 38] Xử lý lưu thông tin khách hàng gọi món từ Menu
+    // 6. Xử lý lưu thông tin khách hàng gọi món từ Menu
     @PostMapping("/order")
     @PreAuthorize("hasAnyAuthority('Admin_Service', 'Staff', 'ROLE_USER')")
     public String processRoomOrder(
@@ -129,13 +138,12 @@ public class ProductController {
                 return "redirect:/rooms";
             }
 
-            // Gọi Service để vừa lấy sản phẩm, vừa tự động check kho và trừ kho an toàn
             Product product = productService.getProductById(productId);
 
-            // Thực hiện kiểm tra kho và trừ kho qua Service
+            // Kiểm tra kho và trừ kho
             productService.decreaseStock(productId, quantity);
 
-            // Tiến hành lưu đơn đặt dịch vụ
+            // Lưu đơn đặt dịch vụ
             RoomServiceOrder order = new RoomServiceOrder();
             order.setRoom(room);
             order.setProduct(product);
@@ -145,9 +153,11 @@ public class ProductController {
 
             roomServiceOrderRepository.save(order);
 
+            // [LOG CHÈN THÊM]: Ghi nhận hành động gọi món dịch vụ
+            activityLogService.log("ORDER_SERVICE", "Đặt " + quantity + " x " + product.getName() + " cho phòng " + room.getRoomName());
+
             redirectAttributes.addFlashAttribute("successMessage", "Gọi món cho phòng " + room.getRoomName() + " thành công!");
         } catch (RuntimeException e) {
-            // Nhận các thông báo lỗi "Không đủ số lượng kho" từ Service ném ra
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/admin/products/menu?roomId=" + roomId;
         }

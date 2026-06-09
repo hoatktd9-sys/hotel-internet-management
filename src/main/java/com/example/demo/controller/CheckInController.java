@@ -91,7 +91,7 @@ public class CheckInController {
         checkInService.save(checkIn);
 
         redirectAttributes.addFlashAttribute("successMessage", "Tạo phiếu thuê và nhận phòng thành công!");
-        return "redirect:/checkin/history";
+        return "redirect:/rooms";
     }
 
     // ===== HIỂN THỊ FORM ĐẶT TRƯỚC PHÒNG (PRE-BOOK) =====

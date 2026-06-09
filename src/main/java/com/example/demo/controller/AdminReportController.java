@@ -134,9 +134,9 @@ public class AdminReportController {
         double surchargeRevenue = filteredBills.stream().mapToDouble(b -> b.getSurchargeReal() != null ? b.getSurchargeReal() : 0.0).sum();
 
         // Group revenue by date for chart
-        Map<LocalDate, Double> revenueByDate = filteredBills.stream()
+        Map<String, Double> revenueByDate = filteredBills.stream()
                 .collect(Collectors.groupingBy(
-                        b -> b.getPaymentTime().toLocalDate(),
+                        b -> b.getPaymentTime().toLocalDate().toString(),
                         TreeMap::new,
                         Collectors.summingDouble(Bill::getFinalAmount)
                 ));

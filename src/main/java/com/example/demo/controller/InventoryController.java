@@ -1,0 +1,101 @@
+package com.example.demo.controller;
+
+import com.example.demo.model.InventoryTransaction;
+import com.example.demo.model.Product;
+import com.example.demo.model.Supplier;
+import com.example.demo.repository.InventoryTransactionRepository;
+import com.example.demo.repository.SupplierRepository;
+import com.example.demo.service.ProductService;
+import com.example.demo.service.ActivityLogService; // IMPORT SERVICE MỚI
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+@Controller
+@RequestMapping("/admin/inventory")
+public class InventoryController {
+
+    private final ProductService productService;
+    private final SupplierRepository supplierRepository;
+    private final InventoryTransactionRepository transactionRepository;
+    private final ActivityLogService activityLogService; // KHAI BÁO SERVICE MỚI
+
+    public InventoryController(ProductService productService,
+                               SupplierRepository supplierRepository,
+                               InventoryTransactionRepository transactionRepository,
+                               ActivityLogService activityLogService) { // INJECT QUA CONSTRUCTOR
+        this.productService = productService;
+        this.supplierRepository = supplierRepository;
+        this.transactionRepository = transactionRepository;
+        this.activityLogService = activityLogService;
+    }
+
+    // FEATURE 41: Xem tồn kho hiện tại
+    @GetMapping("/stock")
+    @PreAuthorize("hasAnyAuthority('Admin_Service', 'Staff')")
+    public String viewStock(Model model) {
+        model.addAttribute("products", productService.getAllProducts());
+        model.addAttribute("suppliers", supplierRepository.findByActiveTrue());
+        return "admin/inventory/stock";
+    }
+
+    // FEATURE 42: Xử lý Nhập kho
+    @PostMapping("/import")
+    @PreAuthorize("hasAnyAuthority('Admin_Service', 'Staff')")
+    public String importStock(@RequestParam("productId") Long productId,
+                              @RequestParam("supplierId") Long supplierId,
+                              @RequestParam("quantity") Integer quantity,
+                              @RequestParam("price") Double price,
+                              @RequestParam(value = "note", required = false) String note,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            // 1. Lấy thông tin sản phẩm và nhà cung cấp
+            Product product = productService.getProductById(productId);
+            Supplier supplier = supplierRepository.findById(supplierId)
+                    .orElseThrow(() -> new RuntimeException("Nhà cung cấp không tồn tại"));
+
+            if (quantity <= 0) {
+                throw new RuntimeException("Số lượng nhập kho phải lớn hơn 0");
+            }
+
+            // 2. Cập nhật số lượng tồn kho (Tăng kho)
+            product.setStockQuantity(product.getStockQuantity() + quantity);
+            productService.saveProduct(product);
+
+            // 3. Ghi log lịch sử giao dịch kho nội bộ
+            InventoryTransaction tx = new InventoryTransaction();
+            tx.setProduct(product);
+            tx.setSupplier(supplier);
+            tx.setTransactionType("IMPORT");
+            tx.setQuantity(quantity);
+            tx.setPrice(price);
+            tx.setNote(note);
+
+            String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+            tx.setOperator(currentUsername);
+            transactionRepository.save(tx);
+
+            // [LOG CHÈN THÊM]: Ghi nhận hành động nhập kho vào Activity Log
+            activityLogService.log("INVENTORY_IMPORT",
+                    "Nhập kho số lượng: +" + quantity + " " + product.getName() + " từ NCC: " + supplier.getName());
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Nhập kho thành công sản phẩm: " + product.getName() + " (+" + quantity + ")");
+
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi nhập kho: " + e.getMessage());
+        }
+        return "redirect:/admin/inventory/stock";
+    }
+
+    // FEATURE 45: Xem lịch sử giao dịch
+    @GetMapping("/transactions")
+    @PreAuthorize("hasAnyAuthority('Admin_Service', 'Staff')")
+    public String viewTransactions(Model model) {
+        model.addAttribute("transactions", transactionRepository.findAllByOrderByIdDesc());
+        return "admin/inventory/transactions";
+    }
+}

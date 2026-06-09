@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Nhật ký hoạt động hệ thống - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background: #f8f9fa; padding: 25px; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        .card-log { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; }
+        .table-responsive { max-height: 700px; overflow-y: auto; }
+        .badge-action { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+
+    <div th:replace="~{fragments/layout :: navbar('Nhật ký hệ thống')}"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-shield-shaded text-danger"></i> Nhật ký hoạt động hệ thống</h2>
+            <p class="text-muted mb-0">Theo dõi, kiểm toán toàn bộ thao tác vận hành phòng máy của nhân viên và Admin</p>
+        </div>
+        <a href="/rooms" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left"></i> Quay lại sảnh chính</a>
+    </div>
+
+    <div class="card-log">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-striped mb-0">
+                <thead class="table-dark">
+                <tr>
+                    <th style="width: 8%">Mã Log</th>
+                    <th style="width: 15%">Thời gian</th>
+                    <th style="width: 15%">Tài khoản thao tác</th>
+                    <th style="width: 18%">Hành động</th>
+                    <th style="width: 44%">Nội dung chi tiết</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="log : ${logs}">
+                    <td class="fw-bold text-secondary" th:text="'#' + ${log.id}">#1</td>
+                    <td th:text="${#temporals.format(log.timestamp, 'HH:mm:ss dd/MM/yyyy')}">Thời gian</td>
+                    <td>
+                            <span class="badge bg-light text-dark border px-2 py-1fw-bold">
+                                <i class="bi bi-person-circle text-primary me-1"></i> <span th:text="${log.username}">User</span>
+                            </span>
+                    </td>
+                    <td>
+                        <span th:if="${log.action == 'CHECKIN_DIRECT'}" class="badge bg-success badge-action"><i class="bi bi-box-arrow-in-right"></i> CHECKIN TRỰC TIẾP</span>
+                        <span th:if="${log.action == 'RESERVE_ROOM'}" class="badge bg-warning text-dark badge-action"><i class="bi bi-calendar-plus"></i> ĐẶT TRƯỚC</span>
+                        <span th:if="${log.action == 'ACTIVATE_RESERVATION'}" class="badge bg-info text-dark badge-action"><i class="bi bi-play-circle"></i> NHẬN MÁY ĐẶT</span>
+                        <span th:if="${log.action == 'CANCEL_RESERVATION'}" class="badge bg-secondary badge-action"><i class="bi bi-x-circle"></i> HỦY ĐẶT PHÒNG</span>
+                        <span th:if="${log.action == 'TRANSFER_ROOM'}" class="badge bg-primary badge-action"><i class="bi bi-arrow-left-right"></i> ĐỔI / CHUYỂN PHÒNG</span>
+                        <span th:if="${log.action == 'EXTEND_ROOM'}" class="badge bg-warning text-dark badge-action"><i class="bi bi-clock-history"></i> GIA HẠN GIỜ</span>
+                        <span th:if="${log.action == 'CHECKOUT_BILLING'}" class="badge bg-danger badge-action"><i class="bi bi-receipt"></i> THANH TOÁN XUẤT HD</span>
+                        <span th:if="${log.action == 'REFUND_BILL'}" class="badge bg-dark badge-action"><i class="bi bi-cash-coin"></i> ADMIN HOÀN TIỀN</span>
+                        <span th:if="${log.action != 'CHECKIN_DIRECT' and log.action != 'RESERVE_ROOM' and log.action != 'ACTIVATE_RESERVATION' and log.action != 'CANCEL_RESERVATION' and log.action != 'TRANSFER_ROOM' and log.action != 'EXTEND_ROOM' and log.action != 'CHECKOUT_BILLING' and log.action != 'REFUND_BILL'}"
+                              class="badge bg-light text-dark border badge-action" th:text="${log.action}">Hành động khác</span>
+                    </td>
+                    <td class="fw-medium text-dark" th:text="${log.detail}">Chi tiết nội dung log</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(logs)}">
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i> Hệ thống chưa ghi nhận lịch sử hoạt động nào!
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,7 +1,6 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,35 +12,28 @@ public class CheckIn {
     private Long id;
 
     // ===== CUSTOMER =====
-
     @ManyToOne
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
     // ===== ROOM =====
-
     @ManyToOne
     @JoinColumn(name = "room_id")
     private Room room;
 
     // ===== CHECK-IN =====
-
     private LocalDateTime checkInTime;
 
     // ===== CHECK-OUT =====
-
     private LocalDateTime checkOutTime;
 
     // ===== TOTAL HOURS =====
-
     private Double totalHours;
 
     // ===== TOTAL PRICE =====
-
     private Double totalPrice;
 
     // ===== RENTAL VOUCHER STATUS & EXTRA INFO =====
-
     private String status = "ACTIVE"; // ACTIVE, RESERVED, COMPLETED, CANCELLED
 
     private Double expectedHours = 0.0;
@@ -148,5 +140,21 @@ public class CheckIn {
 
     public void setSurcharge(Double surcharge) {
         this.surcharge = surcharge;
+    }
+
+    // ===== KIỂM TRA PHÒNG SẮP HẾT GIỜ (DƯỚI 15 PHÚT) =====
+    @Transient
+    public boolean isAlmostOvertime() {
+        if (!"ACTIVE".equals(this.status) || this.checkInTime == null || this.expectedHours == null || this.expectedHours <= 0) {
+            return false;
+        }
+        // Tính toán thời điểm phải trả máy dự kiến
+        // Số phút đã trôi qua kể từ lúc check-in đến hiện tại
+        long minutesPassed = java.time.Duration.between(this.checkInTime, java.time.LocalDateTime.now()).toMinutes();
+        long totalExpectedMinutes = (long) (this.expectedHours * 60);
+        long minutesRemaining = totalExpectedMinutes - minutesPassed;
+
+        // Nếu thời gian còn lại từ 0 đến 15 phút thì bật cảnh báo
+        return minutesRemaining >= 0 && minutesRemaining <= 15;
     }
 }

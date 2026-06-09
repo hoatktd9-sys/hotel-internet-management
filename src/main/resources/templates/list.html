@@ -60,6 +60,31 @@
             animation: alert-glow 2s infinite ease-in-out;
             background-color: #fff5f5 !important;
         }
+
+        /* HIGHLIGHT NHẤP NHÁY MÀU CAM CHO PHÒNG SẮP HẾT GIỜ */
+        @keyframes time-glow {
+            0% { box-shadow: 0 0 4px rgba(253, 126, 20, 0.2); }
+            50% { box-shadow: 0 0 14px rgba(253, 126, 20, 0.7); }
+            100% { box-shadow: 0 0 4px rgba(253, 126, 20, 0.2); }
+        }
+        .animate-alert-time {
+            animation: time-glow 1.5s infinite ease-in-out;
+            background-color: #fffaf5 !important;
+            border-top-color: #fd7e14 !important;
+        }
+
+        /* HIỆU ỨNG RUNG LẮC NÚT GIA HẠN CẢNH BÁO KHI SẮP HẾT GIỜ */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+            20%, 40%, 60%, 80% { transform: translateX(3px); }
+        }
+        .animate-shake {
+            animation: shake 0.6s infinite;
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +112,18 @@
         <a href="/admin/inventory/stock" class="btn btn-sm btn-danger fw-bold shadow-sm px-3 ms-3">
             <i class="bi bi-box-seam"></i> Kiểm tra &amp; Nhập hàng ngay
         </a>
+    </div>
+
+    <div th:if="${almostOvertimeCount > 0}" class="alert alert-warning alert-dismissible fade show shadow-sm border-start border-4 border-warning d-flex align-items-center justify-content-between my-3 animate-alert-time" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-hourglass-split fs-4 text-warning me-3"></i>
+            <div class="text-dark">
+                <strong class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> CẢNH BÁO THỜI GIAN:</strong>
+                Có <span class="badge bg-warning text-dark fs-6 px-2 py-1 mx-1" th:text="${almostOvertimeCount}">0</span> phòng máy sắp hết thời gian đăng ký thuê (&le; 15 phút)!
+                <span class="ms-1 d-none d-md-inline text-muted">(Nhắc nhở khách gia hạn hoặc chuẩn bị kết thúc phiên máy)</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
     <div class="filter-bar shadow-sm">
@@ -119,15 +156,16 @@
     </div>
 
     <div class="room-grid">
-        <div class="room-card" th:each="r : ${list}" th:classappend="'status-' + ${r.status}">
+        <div class="room-card" th:each="r : ${list}" th:classappend="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null and r.activeCheckIn.isAlmostOvertime()} ? 'animate-alert-time' : ('status-' + r.status)">
             <div>
                 <img th:if="${r.image != null and r.image != ''}" th:src="@{'/uploads/images/' + ${r.image}}" class="room-image" alt="Room Image">
                 <img th:if="${r.image == null or r.image == ''}" src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&amp;w=400&amp;auto=format&amp;fit=crop" class="room-image" alt="No Image">
 
                 <div class="room-name">
                     <span th:text="${r.roomName}">Tên phòng</span>
+                    <span th:if="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null and r.activeCheckIn.isAlmostOvertime()}" class="status-badge bg-warning text-dark fw-bold"><i class="bi bi-clock-fill"></i> Sắp hết giờ</span>
                     <span th:if="${r.status.name() == 'AVAILABLE'}" class="status-badge badge-available">Trống</span>
-                    <span th:if="${r.status.name() == 'OCCUPIED'}" class="status-badge badge-occupied">Sử dụng</span>
+                    <span th:if="${r.status.name() == 'OCCUPIED' and (r.activeCheckIn == null or !r.activeCheckIn.isAlmostOvertime())}" class="status-badge badge-occupied">Sử dụng</span>
                     <span th:if="${r.status.name() == 'RESERVED'}" class="status-badge badge-reserved">Đặt trước</span>
                     <span th:if="${r.status.name() == 'CLEANING'}" class="status-badge badge-cleaning">Dọn dẹp</span>
                     <span th:if="${r.status.name() == 'MAINTENANCE'}" class="status-badge badge-maintenance">Bảo trì</span>
@@ -150,12 +188,12 @@
                     <span th:text="${r.description}" class="text-muted text-truncate" style="max-width: 250px; display: inline-block;">Mô tả</span>
                 </div>
 
-                <div th:if="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null}" class="guest-box">
-                    <div class="fw-bold mb-1 text-primary"><i class="bi bi-person-fill"></i> Khách đang chơi:</div>
+                <div th:if="${r.status.name() == 'OCCUPIED' and r.activeCheckIn != null}" class="guest-box" th:styleappend="${r.activeCheckIn.isAlmostOvertime()} ? 'border-left-color: #fd7e14; background: #fffaf5;' : ''">
+                    <div class="fw-bold mb-1" th:classappend="${r.activeCheckIn.isAlmostOvertime()} ? 'text-warning' : 'text-primary'"><i class="bi bi-person-fill"></i> Khách đang chơi:</div>
                     <div>Họ tên: <b th:text="${r.activeCheckIn.customer != null ? r.activeCheckIn.customer.fullName : 'N/A'}">Guest Name</b></div>
                     <div>Số CCCD: <b class="text-secondary" th:text="${r.activeCheckIn.customer != null ? r.activeCheckIn.customer.identityNumber : 'N/A'}">CCCD</b></div>
                     <div>Bắt đầu: <span th:text="${#temporals.format(r.activeCheckIn.checkInTime, 'HH:mm dd-MM')}">Time</span></div>
-                    <div>Thời gian: <span class="badge bg-primary" th:text="${r.activeCheckIn.expectedHours + ' giờ'}">Duration</span></div>
+                    <div>Thời gian: <span class="badge" th:classappend="${r.activeCheckIn.isAlmostOvertime()} ? 'bg-warning text-dark' : 'bg-primary'" th:text="${r.activeCheckIn.expectedHours + ' giờ'}">Duration</span></div>
                 </div>
 
                 <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="guest-box reserved">
@@ -192,7 +230,9 @@
                                 <i class="bi bi-arrow-left-right"></i> Chuyển phòng
                             </button>
 
-                            <button type="button" class="btn btn-warning btn-action text-white flex-fill justify-content-center" data-bs-toggle="modal" th:data-bs-target="'#extendModal' + ${r.activeCheckIn.id}">
+                            <button type="button" class="btn btn-action flex-fill justify-content-center"
+                                    th:classappend="${r.activeCheckIn.isAlmostOvertime()} ? 'animate-shake' : 'btn-warning text-white'"
+                                    data-bs-toggle="modal" th:data-bs-target="'#extendModal' + ${r.activeCheckIn.id}">
                                 <i class="bi bi-clock-history"></i> Gia hạn
                             </button>
                         </div>

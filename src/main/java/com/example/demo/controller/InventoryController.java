@@ -6,6 +6,7 @@ import com.example.demo.model.Supplier;
 import com.example.demo.repository.InventoryTransactionRepository;
 import com.example.demo.repository.SupplierRepository;
 import com.example.demo.service.ProductService;
+import com.example.demo.service.ActivityLogService; // IMPORT SERVICE MỚI
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -20,21 +21,23 @@ public class InventoryController {
     private final ProductService productService;
     private final SupplierRepository supplierRepository;
     private final InventoryTransactionRepository transactionRepository;
+    private final ActivityLogService activityLogService; // KHAI BÁO SERVICE MỚI
 
     public InventoryController(ProductService productService,
                                SupplierRepository supplierRepository,
-                               InventoryTransactionRepository transactionRepository) {
+                               InventoryTransactionRepository transactionRepository,
+                               ActivityLogService activityLogService) { // INJECT QUA CONSTRUCTOR
         this.productService = productService;
         this.supplierRepository = supplierRepository;
         this.transactionRepository = transactionRepository;
+        this.activityLogService = activityLogService;
     }
 
-    // FEATURE 41: Xem tồn kho hiện tại + Đổ dữ liệu phục vụ nút Nhập kho
+    // FEATURE 41: Xem tồn kho hiện tại
     @GetMapping("/stock")
     @PreAuthorize("hasAnyAuthority('Admin_Service', 'Staff')")
     public String viewStock(Model model) {
         model.addAttribute("products", productService.getAllProducts());
-        // Lấy danh sách nhà cung cấp đang hoạt động để chọn khi nhập kho
         model.addAttribute("suppliers", supplierRepository.findByActiveTrue());
         return "admin/inventory/stock";
     }
@@ -58,11 +61,11 @@ public class InventoryController {
                 throw new RuntimeException("Số lượng nhập kho phải lớn hơn 0");
             }
 
-            // 2. Cập nhật số lượng tồn kho của sản phẩm (Tăng kho)
+            // 2. Cập nhật số lượng tồn kho (Tăng kho)
             product.setStockQuantity(product.getStockQuantity() + quantity);
-            productService.saveProduct(product); // Lưu lại thay đổi vào database
+            productService.saveProduct(product);
 
-            // 3. Ghi log lịch sử giao dịch kho
+            // 3. Ghi log lịch sử giao dịch kho nội bộ
             InventoryTransaction tx = new InventoryTransaction();
             tx.setProduct(product);
             tx.setSupplier(supplier);
@@ -71,27 +74,27 @@ public class InventoryController {
             tx.setPrice(price);
             tx.setNote(note);
 
-            // Lấy tên tài khoản nhân viên đang đăng nhập để lưu vết
             String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
             tx.setOperator(currentUsername);
-
             transactionRepository.save(tx);
+
+            // [LOG CHÈN THÊM]: Ghi nhận hành động nhập kho vào Activity Log
+            activityLogService.log("INVENTORY_IMPORT",
+                    "Nhập kho số lượng: +" + quantity + " " + product.getName() + " từ NCC: " + supplier.getName());
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Nhập kho thành công sản phẩm: " + product.getName() + " (+" + quantity + ")");
+
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi nhập kho: " + e.getMessage());
         }
         return "redirect:/admin/inventory/stock";
     }
 
-    // =========================================================================
-    // [THÊM MỚI] FEATURE 45: ĐIỀU HƯỚNG XEM LỊCH SỬ GIAO DỊCH NHẬP XUẤT KHO
-    // =========================================================================
+    // FEATURE 45: Xem lịch sử giao dịch
     @GetMapping("/transactions")
     @PreAuthorize("hasAnyAuthority('Admin_Service', 'Staff')")
     public String viewTransactions(Model model) {
-        // Đổ toàn bộ lịch sử giao dịch mới nhất lên đầu bảng
         model.addAttribute("transactions", transactionRepository.findAllByOrderByIdDesc());
         return "admin/inventory/transactions";
     }

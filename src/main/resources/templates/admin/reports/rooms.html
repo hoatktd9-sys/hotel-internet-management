@@ -29,12 +29,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="r, iterStat : ${roomReport}">
+                    <tr th:each="r, iterStat : ${roomReport}" th:with="rank=${(currentPage * size) + iterStat.count}">
                         <td class="fw-bold">
-                            <span th:if="${iterStat.count == 1}" class="badge bg-warning text-dark fs-6"><i class="bi bi-trophy-fill"></i> 1</span>
-                            <span th:if="${iterStat.count == 2}" class="badge bg-secondary text-white fs-6">2</span>
-                            <span th:if="${iterStat.count == 3}" class="badge bg-danger text-white fs-6">3</span>
-                            <span th:if="${iterStat.count > 3}" th:text="${iterStat.count}" class="text-muted ps-2"></span>
+                            <span th:if="${rank == 1}" class="badge bg-warning text-dark fs-6"><i class="bi bi-trophy-fill"></i> 1</span>
+                            <span th:if="${rank == 2}" class="badge bg-secondary text-white fs-6">2</span>
+                            <span th:if="${rank == 3}" class="badge bg-danger text-white fs-6">3</span>
+                            <span th:if="${rank > 3}" th:text="${rank}" class="text-muted ps-2"></span>
                         </td>
                         <td th:text="${r.roomName}" class="fw-bold text-dark">Phòng 101</td>
                         <td th:text="${r.roomType}">Standard</td>
@@ -56,6 +56,24 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination controls -->
+        <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-3">
+            <ul class="pagination">
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link" th:href="@{/admin/reports/rooms(page=${currentPage - 1},size=${size})}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${currentPage == i} ? 'active'">
+                    <a class="page-link" th:href="@{/admin/reports/rooms(page=${i},size=${size})}" th:text="${i + 1}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/admin/reports/rooms(page=${currentPage + 1},size=${size})}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     </div>
 </div>
 

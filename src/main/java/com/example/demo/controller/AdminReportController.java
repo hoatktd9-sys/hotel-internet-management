@@ -172,14 +172,29 @@ public class AdminReportController {
     // 3. THỐNG KÊ TẦN SUẤT SỬ DỤNG PHÒNG
     // ==========================================
     @GetMapping("/rooms")
-    public String rooms(Model model) {
+    public String rooms(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
         List<Bill> allBills = billRepository.findAll();
         List<Room> allRooms = roomRepository.findAll();
 
         List<RoomReportRow> roomReport = calculateRoomPopularity(allRooms, allBills);
         roomReport.sort(Comparator.comparingLong(RoomReportRow::getCheckInCount).reversed());
 
-        model.addAttribute("roomReport", roomReport);
+        int totalItems = roomReport.size();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+        if (totalPages == 0) totalPages = 1;
+
+        int fromIndex = Math.min(page * size, totalItems);
+        int toIndex = Math.min(fromIndex + size, totalItems);
+
+        List<RoomReportRow> pagedRoomReport = roomReport.subList(fromIndex, toIndex);
+
+        model.addAttribute("roomReport", pagedRoomReport);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("size", size);
         return "admin/reports/rooms";
     }
 
@@ -187,13 +202,28 @@ public class AdminReportController {
     // 4. THỐNG KÊ SẢN PHẨM BÁN CHẠY
     // ==========================================
     @GetMapping("/products")
-    public String products(Model model) {
+    public String products(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
         List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAll();
 
         List<ProductReportRow> productReport = calculateProductSales(allOrders);
         productReport.sort(Comparator.comparingLong(ProductReportRow::getQuantitySold).reversed());
 
-        model.addAttribute("productReport", productReport);
+        int totalItems = productReport.size();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+        if (totalPages == 0) totalPages = 1;
+
+        int fromIndex = Math.min(page * size, totalItems);
+        int toIndex = Math.min(fromIndex + size, totalItems);
+
+        List<ProductReportRow> pagedProductReport = productReport.subList(fromIndex, toIndex);
+
+        model.addAttribute("productReport", pagedProductReport);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("size", size);
         return "admin/reports/products";
     }
 

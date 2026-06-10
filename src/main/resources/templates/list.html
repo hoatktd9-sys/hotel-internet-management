@@ -196,7 +196,7 @@
                     <div>Thời gian: <span class="badge" th:classappend="${r.activeCheckIn.isAlmostOvertime()} ? 'bg-warning text-dark' : 'bg-primary'" th:text="${r.activeCheckIn.expectedHours + ' giờ'}">Duration</span></div>
                 </div>
 
-                <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="guest-box reserved">
+                <div th:if="${r.reservedCheckIn != null}" class="guest-box reserved">
                     <div class="fw-bold mb-1 text-warning"><i class="bi bi-calendar-event-fill"></i> Khách đã đặt:</div>
                     <div>Khách: <b th:text="${r.reservedCheckIn.customer != null ? r.reservedCheckIn.customer.fullName : 'N/A'}">Guest Name</b></div>
                     <div>Số CCCD: <b class="text-secondary" th:text="${r.reservedCheckIn.customer != null ? r.reservedCheckIn.customer.identityNumber : 'N/A'}">CCCD</b></div>
@@ -211,7 +211,7 @@
                         <a th:href="@{/edit/{id}(id=${r.id})}" class="btn btn-warning btn-action text-white flex-fill justify-content-center" sec:authorize="hasRole('ADMIN')"><i class="bi bi-pencil-square"></i> Sửa</a>
                         <a th:href="@{/room/delete/{id}(id=${r.id})}" class="btn btn-danger btn-action flex-fill justify-content-center" sec:authorize="hasRole('ADMIN')" onclick="return confirm('Bạn có chắc muốn xóa phòng này?')"><i class="bi bi-trash"></i> Xóa</a>
 
-                        <a th:if="${r.status.name() == 'AVAILABLE'}" th:href="@{/checkin(roomId=${r.id})}" class="btn btn-success btn-action flex-fill justify-content-center"><i class="bi bi-box-arrow-in-right"></i> Tạo phiếu thuê</a>
+                        <a th:if="${r.status.name() == 'AVAILABLE' or r.status.name() == 'RESERVED'}" th:href="@{/checkin(roomId=${r.id})}" class="btn btn-success btn-action flex-fill justify-content-center"><i class="bi bi-box-arrow-in-right"></i> Tạo phiếu thuê</a>
                     </div>
 
                     <div th:if="${r.status.name() == 'AVAILABLE'}" class="d-flex gap-1 w-100 mt-1 flex-wrap">
@@ -238,12 +238,12 @@
                         </div>
                     </div>
 
-                    <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="w-100 d-flex flex-column gap-1 mt-1">
-                        <a th:href="@{/checkin/activate/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-success btn-action w-100 justify-content-center py-2"><i class="bi bi-check-circle"></i> Check-in nhận phòng</a>
+                    <div th:if="${r.reservedCheckIn != null}" class="w-100 d-flex flex-column gap-1 mt-1 border-top pt-1">
+                        <a th:if="${r.status.name() != 'OCCUPIED' and r.status.name() != 'CLEANING' and r.status.name() != 'MAINTENANCE'}" th:href="@{/checkin/activate/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-success btn-action w-100 justify-content-center py-2"><i class="bi bi-check-circle"></i> Check-in nhận phòng</a>
 
                         <div class="d-flex gap-1 w-100">
                             <button type="button" class="btn btn-primary btn-action flex-fill justify-content-center" data-bs-toggle="modal" th:data-bs-target="'#transferModal' + ${r.reservedCheckIn.id}">
-                                <i class="bi bi-arrow-left-right"></i> Đổi phòng
+                                <i class="bi bi-arrow-left-right"></i> Đổi phòng đặt
                             </button>
 
                             <a th:href="@{/booking/cancel/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-outline-danger btn-action flex-fill justify-content-center" onclick="return confirm('Bạn chắc chắn muốn hủy đặt phòng này?')"><i class="bi bi-x-circle"></i> Hủy đặt</a>
@@ -259,7 +259,8 @@
 
     <div th:each="r : ${list}">
 
-        <div th:if="${r.activeCheckIn != null || r.reservedCheckIn != null}" class="modal fade" th:id="'transferModal' + ${r.activeCheckIn != null ? r.activeCheckIn.id : r.reservedCheckIn.id}" tabindex="-1" aria-hidden="true">
+        <!-- Modal đổi phòng cho khách đang chơi -->
+        <div th:if="${r.activeCheckIn != null}" class="modal fade" th:id="'transferModal' + ${r.activeCheckIn.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <form th:action="@{/checkin/transfer}" method="post">
@@ -268,10 +269,46 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body text-dark text-start">
-                            <input type="hidden" name="checkInId" th:value="${r.activeCheckIn != null ? r.activeCheckIn.id : r.reservedCheckIn.id}">
+                            <input type="hidden" name="checkInId" th:value="${r.activeCheckIn.id}">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Khách hàng:</label>
-                                <input type="text" class="form-control" th:value="${r.activeCheckIn != null ? r.activeCheckIn.customer.fullName : r.reservedCheckIn.customer.fullName}" readonly disabled>
+                                <input type="text" class="form-control" th:value="${r.activeCheckIn.customer.fullName}" readonly disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Phòng hiện tại:</label>
+                                <input type="text" class="form-control" th:value="${r.roomName}" readonly disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Chọn phòng trống mới:</label>
+                                <select name="newRoomId" class="form-select" required>
+                                    <option value="">-- Chọn phòng trống --</option>
+                                    <option th:each="availRoom : ${availableRooms}" th:value="${availRoom.id}" th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price, 1, 'POINT', 0, 'COMMA') + ' VNĐ)'}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary fw-bold">Xác nhận chuyển</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal đổi phòng đặt trước -->
+        <div th:if="${r.reservedCheckIn != null}" class="modal fade" th:id="'transferModal' + ${r.reservedCheckIn.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form th:action="@{/checkin/transfer}" method="post">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-arrow-left-right text-primary"></i> Đổi phòng đặt trước</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-dark text-start">
+                            <input type="hidden" name="checkInId" th:value="${r.reservedCheckIn.id}">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Khách hàng:</label>
+                                <input type="text" class="form-control" th:value="${r.reservedCheckIn.customer.fullName}" readonly disabled>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Phòng hiện tại:</label>

@@ -108,6 +108,21 @@ public class RoomService {
         roomRepository.updateRoomStatusOnly(id, status);
     }
 
+    @Transactional
+    public void refreshRoomStatus(Long id) {
+        Room room = findById(id);
+        if (room == null) return;
+        boolean hasActive = checkInRepository.findByRoomIdAndStatus(id, "ACTIVE").isPresent();
+        boolean hasReserved = checkInRepository.findByRoomIdAndStatus(id, "RESERVED").isPresent();
+        if (hasActive) {
+            roomRepository.updateRoomStatusOnly(id, RoomStatus.OCCUPIED);
+        } else if (hasReserved) {
+            roomRepository.updateRoomStatusOnly(id, RoomStatus.RESERVED);
+        } else {
+            roomRepository.updateRoomStatusOnly(id, RoomStatus.AVAILABLE);
+        }
+    }
+
     // ===== SEARCH NÂNG CAO =====
 
     public List<Room> searchRooms(

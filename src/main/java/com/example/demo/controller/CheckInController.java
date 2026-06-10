@@ -12,6 +12,9 @@ import com.example.demo.service.CustomerService;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.ActivityLogService; // Thêm Service ghi Log
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -65,7 +68,7 @@ public class CheckInController {
     public String checkInPage(Model model, @RequestParam(required = false) Long roomId) {
         model.addAttribute("customers", customerService.findAll());
         model.addAttribute("rooms", roomService.getAll().stream()
-                .filter(r -> r.getStatus() == RoomStatus.AVAILABLE)
+                .filter(r -> r.getStatus() == RoomStatus.AVAILABLE || r.getStatus() == RoomStatus.RESERVED)
                 .collect(Collectors.toList()));
         model.addAttribute("selectedRoomId", roomId);
         return "checkin/create";
@@ -79,7 +82,7 @@ public class CheckInController {
             @RequestParam(defaultValue = "1.0") Double expectedHours,
             RedirectAttributes redirectAttributes) {
         Room room = roomService.findById(roomId);
-        if (room == null || room.getStatus() != RoomStatus.AVAILABLE) {
+        if (room == null || (room.getStatus() != RoomStatus.AVAILABLE && room.getStatus() != RoomStatus.RESERVED)) {
             redirectAttributes.addFlashAttribute("error", "Phòng không khả dụng để check-in!");
             return "redirect:/rooms";
         }
@@ -155,7 +158,7 @@ public class CheckInController {
         checkIn.setExpectedHours(expectedHours);
         checkIn.setStatus("RESERVED");
 
-        roomService.updateStatus(roomId, RoomStatus.AVAILABLE);
+        roomService.updateStatus(roomId, RoomStatus.RESERVED);
         checkInService.save(checkIn);
 
         // [LOG] Ghi nhận hành động Đặt trước phòng máy
@@ -197,8 +200,9 @@ public class CheckInController {
         }
         checkIn.setStatus("CANCELLED");
         checkIn.setCheckOutTime(LocalDateTime.now());
-        roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.AVAILABLE);
         checkInService.save(checkIn);
+
+        roomService.refreshRoomStatus(checkIn.getRoom().getId());
 
         // [LOG] Hủy lịch đặt trước máy
         activityLogService.log("CANCEL_RESERVATION", "Hủy phiếu đặt lịch trước phòng máy "
@@ -214,18 +218,17 @@ public class CheckInController {
                                RedirectAttributes redirectAttributes) {
         CheckIn checkIn = checkInService.findById(checkInId);
         Room newRoom = roomService.findById(newRoomId);
-        if (checkIn == null || newRoom == null || newRoom.getStatus() != RoomStatus.AVAILABLE) {
+        if (checkIn == null || newRoom == null || (newRoom.getStatus() != RoomStatus.AVAILABLE && newRoom.getStatus() != RoomStatus.RESERVED)) {
             redirectAttributes.addFlashAttribute("error", "Chuyển phòng thất bại!");
             return "redirect:/rooms";
         }
+        Long oldRoomId = checkIn.getRoom().getId();
         String oldRoomName = checkIn.getRoom().getRoomName();
-        roomService.updateStatus(checkIn.getRoom().getId(), RoomStatus.AVAILABLE);
-        if ("ACTIVE".equals(checkIn.getStatus()))
-            roomService.updateStatus(newRoom.getId(), RoomStatus.OCCUPIED);
-        else if ("RESERVED".equals(checkIn.getStatus()))
-            roomService.updateStatus(newRoom.getId(), RoomStatus.RESERVED);
         checkIn.setRoom(newRoom);
         checkInService.save(checkIn);
+
+        roomService.refreshRoomStatus(oldRoomId);
+        roomService.refreshRoomStatus(newRoom.getId());
 
         // [LOG] Chuyển đổi phòng/máy tính
         activityLogService.log("TRANSFER_ROOM", "Chuyển khách hàng từ phòng "
@@ -422,11 +425,17 @@ public class CheckInController {
         return "redirect:/billing/history";
     }
 
-    // ===== TẠO ĐIỂM ĐẦU CUỐI XEM DANH SÁCH LOG DÀNH CHO ADMIN =====
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/logs")
-    public String viewSystemLogs(Model model) {
-        model.addAttribute("logs", activityLogService.getAllLogs());
+    public String viewSystemLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Model model) {
+        Page<com.example.demo.model.ActivityLog> logPage = activityLogService.getAllLogsPaginated(PageRequest.of(page, size));
+        model.addAttribute("logs", logPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", logPage.getTotalPages());
+        model.addAttribute("size", size);
         return "admin/log-list";
     }
 }

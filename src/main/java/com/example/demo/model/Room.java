@@ -37,7 +37,6 @@ public class Room {
     @Column(name = "computer_count", nullable = false)
     private Integer computerCount;
 
-    @NotBlank(message = "Mô tả không được để trống")
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -52,19 +51,14 @@ public class Room {
 
     // ================= CẤU HÌNH MÁY =================
 
-    @NotBlank(message = "CPU không được để trống")
     private String cpu;
 
-    @NotBlank(message = "RAM không được để trống")
     private String ram;
 
-    @NotBlank(message = "VGA không được để trống")
     private String vga;
 
-    @NotBlank(message = "SSD không được để trống")
     private String ssd;
 
-    @NotBlank(message = "Màn hình không được để trống")
     private String monitor;
 
     // ================= TRẠNG THÁI =================

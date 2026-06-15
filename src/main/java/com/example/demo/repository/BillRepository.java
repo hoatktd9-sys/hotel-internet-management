@@ -2,15 +2,20 @@ package com.example.demo.repository;
 
 import com.example.demo.model.Bill;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface BillRepository extends JpaRepository<Bill, Long> {
-    // Tìm kiếm hóa đơn theo mã hóa đơn (Phục vụ tra cứu/in ấn)
-    Optional<Bill> findByBillCode(String billCode);
 
-    // Tìm kiếm hóa đơn dựa trên mã phiên thuê phòng
-    Optional<Bill> findByCheckInId(Long checkInId);
+    // Sử dụng JPQL dựa trên tên thực thể Class Bill, CheckIn, Room để Hibernate tự map tên bảng
+    @Query("SELECT b FROM Bill b " +
+            "JOIN b.checkIn c " +
+            "JOIN c.room r " +
+            "WHERE r.id IS NOT NULL")
+    List<Bill> findAllValidBills();
+
+    @Query("SELECT b FROM Bill b WHERE b.checkIn.id = :checkInId")
+    Optional<Bill> findByCheckInId(@Param("checkInId") Long checkInId);
 }

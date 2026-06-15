@@ -2,14 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/layout :: head(${isEdit} ? 'Cập nhật phòng' : 'Thêm phòng')}"></head>
 <body>
+
 <div class="container-fluid">
-    <!-- GROUPED NAVBAR -->
     <div th:replace="~{fragments/layout :: navbar(${isEdit} ? 'Cập nhật phòng' : 'Thêm phòng')}"></div>
 
     <div style="max-width: 800px; margin: 0 auto;" class="mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
             <h3 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-controller text-primary"></i> 
+                <i class="bi bi-controller text-primary"></i>
                 <span th:text="${isEdit} ? 'Cập nhật thông tin phòng' : 'Thêm phòng máy mới'">Thêm phòng</span>
             </h3>
             <div class="d-flex gap-2">
@@ -18,7 +18,7 @@
         </div>
 
         <div class="card-box bg-white p-4 rounded shadow-sm">
-            <form th:action="@{${isEdit ? '/update/' + room.id : '/save'}}"
+            <form th:action="@{${isEdit ? '/rooms/update/' + room.id : '/rooms/save'}}"
                   th:object="${room}"
                   method="post"
                   enctype="multipart/form-data">
@@ -26,16 +26,14 @@
                 <input type="hidden" th:field="*{id}">
                 <input type="hidden" th:field="*{image}">
 
-                <!-- CURRENT IMAGE PREVIEW -->
                 <div class="mb-4 text-center" th:if="${room.image != null and room.image != ''}">
                     <label class="form-label fw-bold d-block text-start"><i class="bi bi-image text-info"></i> Ảnh hiện tại:</label>
-                    <img th:src="@{/uploads/{img}(img=${room.image})}"
+                    <img th:src="${room.image}"
                          class="img-thumbnail rounded shadow-sm"
                          style="max-height: 220px; object-fit: cover; width: 100%; max-width: 450px;"
                          alt="Room Preview">
                 </div>
 
-                <!-- IMAGE UPLOAD -->
                 <div class="mb-4">
                     <label class="form-label fw-bold text-dark"><i class="bi bi-cloud-upload"></i> Tải ảnh phòng mới</label>
                     <input type="file" name="imageFile" accept="image/*" class="form-control">
@@ -44,14 +42,12 @@
                 <h4 class="border-bottom pb-2 mb-3 text-primary fw-bold"><i class="bi bi-info-circle-fill"></i> Thông tin cơ bản</h4>
 
                 <div class="row">
-                    <!-- ROOM NAME -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Tên phòng máy</label>
                         <input type="text" th:field="*{roomName}" class="form-control" placeholder="Ví dụ: Phòng VIP 101" required>
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('roomName')}" th:errors="*{roomName}"></div>
                     </div>
 
-                    <!-- ROOM PRICE -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Giá phòng (VNĐ/giờ)</label>
                         <div class="input-group">
@@ -63,7 +59,6 @@
                 </div>
 
                 <div class="row">
-                    <!-- COMPUTER COUNT -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Số lượng máy tính</label>
                         <div class="input-group">
@@ -73,7 +68,6 @@
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('computerCount')}" th:errors="*{computerCount}"></div>
                     </div>
 
-                    <!-- ROOM TYPE -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Cấu hình / Loại phòng</label>
                         <div class="warning-box bg-light-warning p-2 mb-2 rounded border border-warning" th:if="${roomTypes == null or #lists.isEmpty(roomTypes)}">
@@ -90,7 +84,6 @@
                     </div>
                 </div>
 
-                <!-- DESCRIPTION -->
                 <div class="mb-4">
                     <label class="form-label fw-bold">Mô tả chi tiết phòng</label>
                     <textarea rows="3" th:field="*{description}" class="form-control" placeholder="Ghi chú về vị trí, tiện ích phụ..."></textarea>
@@ -100,14 +93,12 @@
                 <h4 class="border-bottom pb-2 mb-3 text-success fw-bold"><i class="bi bi-cpu-fill"></i> Thông số cấu hình phần cứng</h4>
 
                 <div class="row">
-                    <!-- CPU -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Bộ vi xử lý (CPU)</label>
                         <input type="text" th:field="*{cpu}" class="form-control" placeholder="Ví dụ: Core i7 13700F">
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('cpu')}" th:errors="*{cpu}"></div>
                     </div>
 
-                    <!-- RAM -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Bộ nhớ (RAM)</label>
                         <input type="text" th:field="*{ram}" class="form-control" placeholder="Ví dụ: 32GB Dual Channel">
@@ -116,14 +107,12 @@
                 </div>
 
                 <div class="row">
-                    <!-- VGA -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Card màn hình (VGA)</label>
                         <input type="text" th:field="*{vga}" class="form-control" placeholder="Ví dụ: RTX 4070 Ti">
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('vga')}" th:errors="*{vga}"></div>
                     </div>
 
-                    <!-- SSD -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Ổ cứng (SSD)</label>
                         <input type="text" th:field="*{ssd}" class="form-control" placeholder="Ví dụ: NVMe M.2 1TB Gen4">
@@ -131,7 +120,6 @@
                     </div>
                 </div>
 
-                <!-- MONITOR -->
                 <div class="mb-4">
                     <label class="form-label fw-bold">Màn hình hiển thị</label>
                     <input type="text" th:field="*{monitor}" class="form-control" placeholder="Ví dụ: ASUS ROG 27 inch 240Hz 2K">
@@ -147,7 +135,5 @@
         </div>
     </div>
 </div>
-
-
 </body>
 </html>

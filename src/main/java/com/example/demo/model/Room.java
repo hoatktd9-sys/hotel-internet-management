@@ -14,21 +14,19 @@ import java.util.List;
 @Table(name = "room")
 @Getter
 @Setter
-@SoftDelete // Kích hoạt xóa mềm Hibernate 7 (Tự động thêm & quản lý cột 'deleted')
+@SoftDelete
 public class Room {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ================= THÔNG TIN PHÒNG =================
-
     @NotBlank(message = "Tên phòng không được để trống")
     @Column(name = "room_name", unique = true, nullable = false)
     private String roomName;
 
     @NotNull(message = "Giá phòng không được để trống")
-    @DecimalMin(value = "10000.0", message = "Giá phòng phải lớn hơn 50.000 VNĐ")
+    @DecimalMin(value = "10000.0", message = "Giá phòng phải lớn hơn 10.000 VNĐ")
     @Column(nullable = false)
     private Double price;
 
@@ -43,14 +41,10 @@ public class Room {
 
     private String image;
 
-    // ================= LOẠI PHÒNG =================
-
     @NotNull(message = "Loại phòng không được để trống")
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "room_type_id", nullable = false)
+    @ManyToOne(cascade = CascadeType.MERGE)
+    @JoinColumn(name = "room_type_id")
     private RoomType roomType;
-
-    // ================= CẤU HÌNH MÁY =================
 
     @NotBlank(message = "CPU không được để trống")
     private String cpu;
@@ -67,21 +61,17 @@ public class Room {
     @NotBlank(message = "Màn hình không được để trống")
     private String monitor;
 
-    // ================= TRẠNG THÁI =================
-
+    // FIX LỖI 5: Ép độ dài cột VARCHAR trên MySQL rộng ra 20 ký tự để chứa vừa chữ RESERVED
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
     private RoomStatus status;
 
-    // ================= CHECK IN =================
-    // Bỏ CascadeType.ALL và orphanRemoval để tránh xóa nhầm lịch sử CheckIn khi xóa
-    // phòng
     @OneToMany(mappedBy = "room")
     private List<CheckIn> checkIns = new ArrayList<>();
 
     @Transient
     public CheckIn getActiveCheckIn() {
-        if (checkIns == null)
-            return null;
+        if (checkIns == null) return null;
         for (CheckIn c : checkIns) {
             if ("ACTIVE".equals(c.getStatus())) {
                 return c;
@@ -92,8 +82,7 @@ public class Room {
 
     @Transient
     public CheckIn getReservedCheckIn() {
-        if (checkIns == null)
-            return null;
+        if (checkIns == null) return null;
         for (CheckIn c : checkIns) {
             if ("RESERVED".equals(c.getStatus())) {
                 return c;
@@ -101,8 +90,6 @@ public class Room {
         }
         return null;
     }
-
-    // ================= CONSTRUCTOR =================
 
     public Room() {
         this.status = RoomStatus.AVAILABLE;

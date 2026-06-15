@@ -21,7 +21,6 @@ public class RoomService {
             RoomTypeService roomTypeService,
             CheckInRepository checkInRepository
     ) {
-
         this.roomRepository = roomRepository;
         this.roomTypeService = roomTypeService;
         this.checkInRepository = checkInRepository;
@@ -40,7 +39,6 @@ public class RoomService {
     // ===== TÌM THEO ID =====
 
     public Room findById(Long id) {
-
         return roomRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException("Không tìm thấy phòng"));
@@ -61,15 +59,19 @@ public class RoomService {
     // ===== XÓA MỀM =====
     @Transactional
     public void delete(Long id) {
-        // 1. Kiểm tra xem phòng này hiện tại có lượt Check-in nào đang hoạt động (chưa check-out) không
+        // 1. Kiểm tra xem phòng này hiện tại có lượt Check-in nào đang hoạt động không
         boolean isRoomOccupied = checkInRepository.findByRoomIdAndCheckOutTimeIsNull(id).isPresent();
 
         if (isRoomOccupied) {
             throw new RuntimeException("Không thể xóa phòng này! Phòng hiện đang có khách đang sử dụng (Chưa hoàn tất Check-out).");
         }
 
-        // 2. Nếu phòng trống (không có khách đang ngồi), tiến hành xóa mềm
-        // Nhờ có @SoftDelete ở Entity Room, lệnh này sẽ tự động chuyển thành UPDATE room SET deleted = true WHERE id = ?
+        // 2. Nếu phòng trống, tiến hành xóa
+        deleteById(id);
+    }
+
+    // [THÊM MỚI] Khai báo xóa theo ID
+    public void deleteById(Long id) {
         roomRepository.deleteById(id);
     }
 
@@ -94,7 +96,6 @@ public class RoomService {
     // ===== SEARCH TÊN =====
 
     public List<Room> searchByName(String keyword) {
-
         return roomRepository
                 .findByRoomNameContainingIgnoreCase(keyword);
     }
@@ -104,7 +105,6 @@ public class RoomService {
             Long id,
             RoomStatus status
     ) {
-        // Sử dụng hàm cập nhật trực tiếp trường status thay vì save cả thực thể
         roomRepository.updateRoomStatusOnly(id, status);
     }
 
@@ -115,7 +115,6 @@ public class RoomService {
             RoomStatus status,
             String roomType
     ) {
-
         return roomRepository.searchRooms(
                 keyword,
                 status,

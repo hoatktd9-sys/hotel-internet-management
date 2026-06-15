@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -32,39 +31,34 @@ public class AdminReportController {
     private BillRepository billRepository;
 
     @Autowired
-    private CheckInRepository checkInRepository;
-
-    @Autowired
     private RoomRepository roomRepository;
 
     @Autowired
     private RoomServiceOrderRepository roomServiceOrderRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
 
     // ==========================================
     // 1. DASHBOARD TỔNG QUAN
     // ==========================================
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        List<Bill> allBills = billRepository.findAll();
+        // Sử dụng hàm truy vấn lọc sạch dữ liệu lỗi từ tầng SQL
+        List<Bill> allBills = billRepository.findAllValidBills();
         List<Room> allRooms = roomRepository.findAll();
-        List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAll();
+        List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAllValidOrders();
 
         // 1.1 Doanh thu
         LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
         LocalDateTime endOfToday = LocalDate.now().atTime(LocalTime.MAX);
 
         double todayRevenue = allBills.stream()
-                .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null 
+                .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null
                         && !b.getPaymentTime().isBefore(startOfToday) && !b.getPaymentTime().isAfter(endOfToday))
                 .mapToDouble(Bill::getFinalAmount)
                 .sum();
 
         LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         double monthRevenue = allBills.stream()
-                .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null 
+                .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null
                         && !b.getPaymentTime().isBefore(startOfMonth) && !b.getPaymentTime().isAfter(endOfToday))
                 .mapToDouble(Bill::getFinalAmount)
                 .sum();
@@ -114,8 +108,8 @@ public class AdminReportController {
             @RequestParam(required = false) String endDate,
             Model model) {
 
-        List<Bill> allBills = billRepository.findAll();
-        
+        List<Bill> allBills = billRepository.findAllValidBills();
+
         LocalDate start = (startDate != null && !startDate.isEmpty()) ? LocalDate.parse(startDate) : LocalDate.now().minusDays(30);
         LocalDate end = (endDate != null && !endDate.isEmpty()) ? LocalDate.parse(endDate) : LocalDate.now();
 
@@ -123,7 +117,7 @@ public class AdminReportController {
         LocalDateTime endLDT = end.atTime(LocalTime.MAX);
 
         List<Bill> filteredBills = allBills.stream()
-                .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null 
+                .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null
                         && !b.getPaymentTime().isBefore(startLDT) && !b.getPaymentTime().isAfter(endLDT))
                 .sorted(Comparator.comparing(Bill::getPaymentTime).reversed())
                 .collect(Collectors.toList());
@@ -173,7 +167,7 @@ public class AdminReportController {
     // ==========================================
     @GetMapping("/rooms")
     public String rooms(Model model) {
-        List<Bill> allBills = billRepository.findAll();
+        List<Bill> allBills = billRepository.findAllValidBills();
         List<Room> allRooms = roomRepository.findAll();
 
         List<RoomReportRow> roomReport = calculateRoomPopularity(allRooms, allBills);
@@ -188,7 +182,7 @@ public class AdminReportController {
     // ==========================================
     @GetMapping("/products")
     public String products(Model model) {
-        List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAll();
+        List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAllValidOrders();
 
         List<ProductReportRow> productReport = calculateProductSales(allOrders);
         productReport.sort(Comparator.comparingLong(ProductReportRow::getQuantitySold).reversed());
@@ -208,23 +202,22 @@ public class AdminReportController {
             HttpServletResponse response) throws IOException {
 
         response.setContentType("text/csv; charset=UTF-8");
-        
         PrintWriter writer = response.getWriter();
-        // Ghi UTF-8 BOM để Excel hiển thị đúng tiếng Việt có dấu
-        writer.write('\ufeff');
+        writer.write('\ufeff'); // Ghi UTF-8 BOM
 
         if ("revenue".equalsIgnoreCase(type)) {
             response.setHeader("Content-Disposition", "attachment; filename=\"Bao_Cao_Doanh_Thu_" + LocalDate.now() + ".csv\"");
             writer.println("Mã Hóa Đơn,Thời Gian Thanh Toán,Phương Thức,Tiền Phòng,Tiền Dịch Vụ,Phụ Thu,Tổng Tiền");
-            
-            List<Bill> allBills = billRepository.findAll();
+
+            List<Bill> allBills = billRepository.findAllValidBills();
+
             LocalDate start = (startDate != null && !startDate.isEmpty()) ? LocalDate.parse(startDate) : LocalDate.now().minusDays(30);
             LocalDate end = (endDate != null && !endDate.isEmpty()) ? LocalDate.parse(endDate) : LocalDate.now();
             LocalDateTime startLDT = start.atStartOfDay();
             LocalDateTime endLDT = end.atTime(LocalTime.MAX);
 
             List<Bill> filteredBills = allBills.stream()
-                    .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null 
+                    .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null
                             && !b.getPaymentTime().isBefore(startLDT) && !b.getPaymentTime().isAfter(endLDT))
                     .sorted(Comparator.comparing(Bill::getPaymentTime).reversed())
                     .collect(Collectors.toList());
@@ -233,7 +226,7 @@ public class AdminReportController {
                 double roomReal = b.getRoomPriceReal() != null ? b.getRoomPriceReal() + (b.getOvertimePriceReal() != null ? b.getOvertimePriceReal() : 0.0) : 0.0;
                 double serviceReal = b.getServicePriceReal() != null ? b.getServicePriceReal() : 0.0;
                 double surchargeReal = b.getSurchargeReal() != null ? b.getSurchargeReal() : 0.0;
-                
+
                 writer.println(String.format("%s,%s,%s,%.0f,%.0f,%.0f,%.0f",
                         b.getBillCode(),
                         b.getPaymentTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
@@ -244,13 +237,14 @@ public class AdminReportController {
                         b.getFinalAmount()
                 ));
             }
-        } 
+        }
         else if ("rooms".equalsIgnoreCase(type)) {
             response.setHeader("Content-Disposition", "attachment; filename=\"Bao_Cao_Tan_Suat_Phong_" + LocalDate.now() + ".csv\"");
             writer.println("Tên Phòng,Loại Phòng,Số Lượt Thuê,Tổng Số Giờ Sử Dụng,Doanh Thu Đóng Góp (VNĐ)");
 
-            List<Bill> allBills = billRepository.findAll();
+            List<Bill> allBills = billRepository.findAllValidBills();
             List<Room> allRooms = roomRepository.findAll();
+
             List<RoomReportRow> rows = calculateRoomPopularity(allRooms, allBills);
             rows.sort(Comparator.comparingLong(RoomReportRow::getCheckInCount).reversed());
 
@@ -263,12 +257,13 @@ public class AdminReportController {
                         r.getTotalRevenue()
                 ));
             }
-        } 
+        }
         else if ("products".equalsIgnoreCase(type)) {
             response.setHeader("Content-Disposition", "attachment; filename=\"Bao_Cao_San_Pham_" + LocalDate.now() + ".csv\"");
             writer.println("Tên Sản Phẩm,Danh Mục Dịch Vụ,Số Lượng Bán,Tổng Doanh Số (VNĐ)");
 
-            List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAll();
+            List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAllValidOrders();
+
             List<ProductReportRow> rows = calculateProductSales(allOrders);
             rows.sort(Comparator.comparingLong(ProductReportRow::getQuantitySold).reversed());
 
@@ -289,21 +284,26 @@ public class AdminReportController {
     // ==========================================
     // CÁC HÀM TÍNH TOÁN PHỤ
     // ==========================================
-
     private List<RoomReportRow> calculateRoomPopularity(List<Room> allRooms, List<Bill> allBills) {
         Map<Long, RoomReportRow> reportMap = new HashMap<>();
-        
-        // Khởi tạo tất cả các phòng để đảm bảo các phòng có 0 lượt thuê vẫn hiển thị
+
         for (Room r : allRooms) {
             String typeName = r.getRoomType() != null ? r.getRoomType().getName() : "Không xác định";
             reportMap.put(r.getId(), new RoomReportRow(r.getRoomName(), typeName, 0, 0.0, 0.0));
         }
 
         for (Bill b : allBills) {
-            if ("PAID".equalsIgnoreCase(b.getStatus()) && b.getCheckIn() != null && b.getCheckIn().getRoom() != null) {
+            if ("PAID".equalsIgnoreCase(b.getStatus()) && b.getCheckIn() != null) {
                 Room room = b.getCheckIn().getRoom();
-                RoomReportRow row = reportMap.get(room.getId());
-                if (row != null) {
+                if (room != null) {
+                    RoomReportRow row = reportMap.get(room.getId());
+                    if (row == null) {
+                        String deletedRoomName = room.getRoomName() != null ? room.getRoomName() : "Phòng đã xóa (ID: " + room.getId() + ")";
+                        String deletedRoomType = (room.getRoomType() != null) ? room.getRoomType().getName() : "Không xác định";
+                        row = new RoomReportRow(deletedRoomName, deletedRoomType, 0, 0.0, 0.0);
+                        reportMap.put(room.getId(), row);
+                    }
+
                     row.setCheckInCount(row.getCheckInCount() + 1);
                     double hours = b.getCheckIn().getTotalHours() != null ? b.getCheckIn().getTotalHours() : 0.0;
                     row.setTotalHours(row.getTotalHours() + hours);
@@ -311,7 +311,6 @@ public class AdminReportController {
                 }
             }
         }
-
         return new ArrayList<>(reportMap.values());
     }
 
@@ -321,24 +320,25 @@ public class AdminReportController {
         for (RoomServiceOrder o : allOrders) {
             if ("DELIVERED".equalsIgnoreCase(o.getStatus()) && o.getProduct() != null) {
                 Product p = o.getProduct();
+                String catName = (p.getCategory() != null) ? p.getCategory().getName() : "Không xác định";
+
                 ProductReportRow row = reportMap.get(p.getId());
-                String catName = p.getCategory() != null ? p.getCategory().getName() : "Không xác định";
                 if (row == null) {
-                    row = new ProductReportRow(p.getName(), catName, 0, 0.0);
+                    String productName = p.getName() != null ? p.getName() : "Sản phẩm đã xóa";
+                    row = new ProductReportRow(productName, catName, 0, 0.0);
                     reportMap.put(p.getId(), row);
                 }
+
                 row.setQuantitySold(row.getQuantitySold() + o.getQuantity());
                 row.setTotalRevenue(row.getTotalRevenue() + (o.getTotalPrice() != null ? o.getTotalPrice() : 0.0));
             }
         }
-
         return new ArrayList<>(reportMap.values());
     }
 
     // ==========================================
-    // CÁC LỚP BÁO CÁO PHỤ (ROWS DTO)
+    // ROWS DTO CLASSES
     // ==========================================
-
     public static class RoomReportRow {
         private String roomName;
         private String roomType;

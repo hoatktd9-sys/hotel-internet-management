@@ -194,7 +194,7 @@
                     <div>Thời gian: <span class="badge" th:classappend="${r.activeCheckIn.isAlmostOvertime()} ? 'bg-warning text-dark' : 'bg-primary'" th:text="${r.activeCheckIn.expectedHours + ' giờ'}">Duration</span></div>
                 </div>
 
-                <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="guest-box reserved">
+                <div th:if="${r.reservedCheckIn != null}" class="guest-box reserved">
                     <div class="fw-bold mb-1 text-warning"><i class="bi bi-calendar-event-fill"></i> Khách đã đặt:</div>
                     <div>Khách: <b th:text="${r.reservedCheckIn.customer != null ? r.reservedCheckIn.customer.fullName : 'N/A'}">Guest Name</b></div>
                     <div>Số CCCD: <b class="text-secondary" th:text="${r.reservedCheckIn.customer != null ? r.reservedCheckIn.customer.identityNumber : 'N/A'}">CCCD</b></div>
@@ -209,7 +209,7 @@
                         <a th:href="@{/rooms/edit/{id}(id=${r.id})}" class="btn btn-warning btn-action text-white flex-fill justify-content-center" sec:authorize="hasRole('ADMIN')"><i class="bi bi-pencil-square"></i> Sửa</a>
                         <a th:href="@{/rooms/delete/{id}(id=${r.id})}" class="btn btn-danger btn-action flex-fill justify-content-center" sec:authorize="hasRole('ADMIN')" onclick="return confirm('Bạn có chắc muốn xóa phòng này?')"><i class="bi bi-trash"></i> Xóa</a>
 
-                        <a th:if="${r.status.name() == 'AVAILABLE'}" th:href="@{/checkin(roomId=${r.id})}" class="btn btn-success btn-action flex-fill justify-content-center"><i class="bi bi-box-arrow-in-right"></i> Tạo phiếu thuê</a>
+                        <a th:if="${r.status.name() == 'AVAILABLE' or r.status.name() == 'RESERVED'}" th:href="@{/checkin(roomId=${r.id})}" class="btn btn-success btn-action flex-fill justify-content-center"><i class="bi bi-box-arrow-in-right"></i> Tạo phiếu thuê</a>
                     </div>
 
                     <div class="d-flex gap-1 w-100 mt-1 flex-wrap">
@@ -236,12 +236,12 @@
                         </div>
                     </div>
 
-                    <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="w-100 d-flex flex-column gap-1 mt-1">
-                        <a th:href="@{/checkin/activate/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-success btn-action w-100 justify-content-center py-2"><i class="bi bi-check-circle"></i> Check-in nhận phòng</a>
+                    <div th:if="${r.reservedCheckIn != null}" class="w-100 d-flex flex-column gap-1 mt-1 border-top pt-1">
+                        <a th:if="${r.status.name() != 'OCCUPIED' and r.status.name() != 'CLEANING' and r.status.name() != 'MAINTENANCE'}" th:href="@{/checkin/activate/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-success btn-action w-100 justify-content-center py-2"><i class="bi bi-check-circle"></i> Check-in nhận phòng</a>
 
                         <div class="d-flex gap-1 w-100">
                             <button type="button" class="btn btn-primary btn-action flex-fill justify-content-center" data-bs-toggle="modal" th:data-bs-target="'#transferModal' + ${r.reservedCheckIn.id}">
-                                <i class="bi bi-arrow-left-right"></i> Đổi phòng
+                                <i class="bi bi-arrow-left-right"></i> Đổi phòng đặt
                             </button>
 
                             <a th:href="@{/booking/cancel/{id}(id=${r.reservedCheckIn.id})}" class="btn btn-outline-danger btn-action flex-fill justify-content-center" onclick="return confirm('Bạn chắc chắn muốn hủy đặt phòng này?')"><i class="bi bi-x-circle"></i> Hủy đặt</a>
@@ -268,7 +268,7 @@
                             <input type="hidden" name="checkInId" th:value="${r.activeCheckIn.id}">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Khách hàng:</label>
-                                <input type="text" class="form-control" th:value="${r.activeCheckIn.customer != null ? r.activeCheckIn.customer.fullName : 'N/A'}" readonly disabled>
+                                <input type="text" class="form-control" th:value="${r.activeCheckIn.customer.fullName}" readonly disabled>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Phòng hiện tại:</label>
@@ -278,9 +278,7 @@
                                 <label class="form-label fw-bold">Chọn phòng trống mới:</label>
                                 <select name="newRoomId" class="form-select" required>
                                     <option value="">-- Chọn phòng trống --</option>
-                                    <option th:each="availRoom : ${availableRooms}"
-                                            th:value="${availRoom.id}"
-                                            th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price, 1, 'POINT', 0, 'COMMA') + ' VNĐ)'}"></option>
+                                    <option th:each="availRoom : ${availableRooms}" th:value="${availRoom.id}" th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price, 1, 'POINT', 0, 'COMMA') + ' VNĐ)'}"></option>
                                 </select>
                             </div>
                         </div>
@@ -293,7 +291,7 @@
             </div>
         </div>
 
-        <div th:if="${r.status.name() == 'RESERVED' and r.reservedCheckIn != null}" class="modal fade" th:id="'transferModal' + ${r.reservedCheckIn.id}" tabindex="-1" aria-hidden="true">
+        <div th:if="${r.reservedCheckIn != null}" class="modal fade" th:id="'transferModal' + ${r.reservedCheckIn.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <form th:action="@{/checkin/transfer}" method="post">
@@ -315,9 +313,7 @@
                                 <label class="form-label fw-bold">Chọn phòng trống mới:</label>
                                 <select name="newRoomId" class="form-select" required>
                                     <option value="">-- Chọn phòng trống --</option>
-                                    <option th:each="availRoom : ${availableRooms}"
-                                            th:value="${availRoom.id}"
-                                            th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price, 1, 'POINT', 0, 'COMMA') + ' VNĐ)'}"></option>
+                                    <option th:each="availRoom : ${availableRooms}" th:value="${availRoom.id}" th:text="${availRoom.roomName + ' (Đơn giá: ' + #numbers.formatDecimal(availRoom.price, 1, 'POINT', 0, 'COMMA') + ' VNĐ)'}"></option>
                                 </select>
                             </div>
                         </div>
@@ -361,12 +357,8 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<script>
+    </div> </div> <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Sử dụng khối try-catch an toàn để đoạn script không làm ảnh hưởng tới tiến trình DOM khác
         try {
             const links = document.querySelectorAll('.dropdown-menu a[href="/admin/products/menu"]');
             links.forEach(link => {

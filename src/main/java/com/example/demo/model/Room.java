@@ -35,7 +35,6 @@ public class Room {
     @Column(name = "computer_count", nullable = false)
     private Integer computerCount;
 
-    @NotBlank(message = "Mô tả không được để trống")
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -47,18 +46,16 @@ public class Room {
     private RoomType roomType;
 
     @NotBlank(message = "CPU không được để trống")
+    // ================= CẤU HÌNH MÁY =================
+
     private String cpu;
 
-    @NotBlank(message = "RAM không được để trống")
     private String ram;
 
-    @NotBlank(message = "VGA không được để trống")
     private String vga;
 
-    @NotBlank(message = "SSD không được để trống")
     private String ssd;
 
-    @NotBlank(message = "Màn hình không được để trống")
     private String monitor;
 
     // FIX LỖI 5: Ép độ dài cột VARCHAR trên MySQL rộng ra 20 ký tự để chứa vừa chữ RESERVED

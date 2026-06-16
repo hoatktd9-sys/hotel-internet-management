@@ -41,7 +41,6 @@ public class AdminReportController {
     // ==========================================
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        // Sử dụng hàm truy vấn lọc sạch dữ liệu lỗi từ tầng SQL
         List<Bill> allBills = billRepository.findAllValidBills();
         List<Room> allRooms = roomRepository.findAll();
         List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAllValidOrders();
@@ -127,15 +126,13 @@ public class AdminReportController {
         double serviceRevenue = filteredBills.stream().mapToDouble(b -> b.getServicePriceReal() != null ? b.getServicePriceReal() : 0.0).sum();
         double surchargeRevenue = filteredBills.stream().mapToDouble(b -> b.getSurchargeReal() != null ? b.getSurchargeReal() : 0.0).sum();
 
-        // Group revenue by date for chart
-        Map<LocalDate, Double> revenueByDate = filteredBills.stream()
+        Map<String, Double> revenueByDate = filteredBills.stream()
                 .collect(Collectors.groupingBy(
-                        b -> b.getPaymentTime().toLocalDate(),
+                        b -> b.getPaymentTime().toLocalDate().toString(),
                         TreeMap::new,
                         Collectors.summingDouble(Bill::getFinalAmount)
                 ));
 
-        // Group revenue by month for last 12 months list
         Map<YearMonth, Double> revenueByMonth = allBills.stream()
                 .filter(b -> "PAID".equalsIgnoreCase(b.getStatus()) && b.getPaymentTime() != null)
                 .collect(Collectors.groupingBy(
@@ -163,31 +160,61 @@ public class AdminReportController {
     }
 
     // ==========================================
-    // 3. THỐNG KÊ TẦN SUẤT SỬ DỤNG PHÒNG
+    // 3. THỐNG KÊ TẦN SUẤT SỬ DỤNG PHÒNG (CÓ PHÂN TRANG)
     // ==========================================
     @GetMapping("/rooms")
-    public String rooms(Model model) {
+    public String rooms(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
         List<Bill> allBills = billRepository.findAllValidBills();
         List<Room> allRooms = roomRepository.findAll();
 
         List<RoomReportRow> roomReport = calculateRoomPopularity(allRooms, allBills);
         roomReport.sort(Comparator.comparingLong(RoomReportRow::getCheckInCount).reversed());
 
-        model.addAttribute("roomReport", roomReport);
+        int totalItems = roomReport.size();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+        if (totalPages == 0) totalPages = 1;
+
+        int fromIndex = Math.min(page * size, totalItems);
+        int toIndex = Math.min(fromIndex + size, totalItems);
+
+        List<RoomReportRow> pagedRoomReport = roomReport.subList(fromIndex, toIndex);
+
+        model.addAttribute("roomReport", pagedRoomReport);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("size", size);
         return "admin/reports/rooms";
     }
 
     // ==========================================
-    // 4. THỐNG KÊ SẢN PHẨM BÁN CHẠY
+    // 4. THỐNG KÊ SẢN PHẨM BÁN CHẠY (CÓ PHÂN TRANG)
     // ==========================================
     @GetMapping("/products")
-    public String products(Model model) {
+    public String products(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
         List<RoomServiceOrder> allOrders = roomServiceOrderRepository.findAllValidOrders();
 
         List<ProductReportRow> productReport = calculateProductSales(allOrders);
         productReport.sort(Comparator.comparingLong(ProductReportRow::getQuantitySold).reversed());
 
-        model.addAttribute("productReport", productReport);
+        int totalItems = productReport.size();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+        if (totalPages == 0) totalPages = 1;
+
+        int fromIndex = Math.min(page * size, totalItems);
+        int toIndex = Math.min(fromIndex + size, totalItems);
+
+        List<ProductReportRow> pagedProductReport = productReport.subList(fromIndex, toIndex);
+
+        model.addAttribute("productReport", pagedProductReport);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("size", size);
         return "admin/reports/products";
     }
 
@@ -203,7 +230,7 @@ public class AdminReportController {
 
         response.setContentType("text/csv; charset=UTF-8");
         PrintWriter writer = response.getWriter();
-        writer.write('\ufeff'); // Ghi UTF-8 BOM
+        writer.write('\ufeff');
 
         if ("revenue".equalsIgnoreCase(type)) {
             response.setHeader("Content-Disposition", "attachment; filename=\"Bao_Cao_Doanh_Thu_" + LocalDate.now() + ".csv\"");
@@ -277,6 +304,10 @@ public class AdminReportController {
             }
         }
 
+        viewFlushClose(writer);
+    }
+
+    private void viewFlushClose(PrintWriter writer) throws IOException {
         writer.flush();
         writer.close();
     }

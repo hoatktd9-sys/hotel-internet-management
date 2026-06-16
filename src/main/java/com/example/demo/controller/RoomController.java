@@ -39,6 +39,9 @@ public class RoomController {
         this.cloudStorageService = cloudStorageService;
     }
 
+    // ==========================================
+    // 1. DANH SÁCH PHÒNG MÁY
+    // ==========================================
     @GetMapping(value = {"", "/"})
     public String list(Model model) {
         List<Room> roomList = roomService.findAll();
@@ -49,42 +52,12 @@ public class RoomController {
                 .collect(Collectors.toList());
         model.addAttribute("availableRooms", availableRooms);
 
-        long lowStockCount = productService.getAllProducts().stream()
-                .filter(p -> p.getStockQuantity() != null && p.getStockQuantity() <= 10)
-                .count();
-        model.addAttribute("lowStockCount", lowStockCount);
-
-        List<Room> almostOvertimeRooms = roomList.stream()
-                .filter(r -> r.getStatus() == RoomStatus.OCCUPIED)
-                .filter(r -> r.getActiveCheckIn() != null && r.getActiveCheckIn().isAlmostOvertime())
-                .collect(Collectors.toList());
-
-        model.addAttribute("almostOvertimeRooms", almostOvertimeRooms);
-        model.addAttribute("almostOvertimeCount", almostOvertimeRooms.size());
-
         return "list";
     }
 
-    @GetMapping("/search")
-    public String searchRooms(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) RoomStatus status,
-            @RequestParam(required = false) String roomType,
-            Model model) {
-
-        model.addAttribute("list", roomService.searchRooms(keyword, status, roomType));
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("selectedStatus", status);
-        model.addAttribute("selectedRoomType", roomType);
-
-        long lowStockCount = productService.getAllProducts().stream()
-                .filter(p -> p.getStockQuantity() != null && p.getStockQuantity() <= 10)
-                .count();
-        model.addAttribute("lowStockCount", lowStockCount);
-
-        return "list";
-    }
-
+    // ==========================================
+    // 2. THÊM MỚI PHÒNG MÁY (DÙNG CLOUD STORAGE)
+    // ==========================================
     @GetMapping("/create")
     @PreAuthorize("hasRole('ADMIN')")
     public String createForm(Model model) {
@@ -140,7 +113,9 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
-    // ĐỒNG BỘ ĐƯỜNG DẪN SỬA: /rooms/edit/{id}
+    // ==========================================
+    // 3. CẬP NHẬT PHÒNG MÁY (GIỮ/ĐỔI ẢNH CLOUD)
+    // ==========================================
     @GetMapping("/edit/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public String editForm(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes) {
@@ -155,7 +130,6 @@ public class RoomController {
         return "create";
     }
 
-    // FIX LỖI 1 & LỖI 3: Xử lý cập nhật thông tin phòng máy hoàn chỉnh
     @PostMapping("/update/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public String updateRoom(@PathVariable("id") Long id,
@@ -165,7 +139,6 @@ public class RoomController {
                              Model model,
                              RedirectAttributes redirectAttributes) {
 
-        // Nếu có lỗi validate các trường cơ bản của Room, trả về view sửa luôn
         if (result.hasErrors()) {
             model.addAttribute("roomTypes", roomTypeService.findAll());
             model.addAttribute("isEdit", true);
@@ -179,20 +152,16 @@ public class RoomController {
                 return "redirect:/rooms";
             }
 
-            // GIẢI QUYẾT LỖI 1: Lấy RoomType xịn từ DB để tránh lỗi Validation trường Name bị trống
             if (room.getRoomType() != null && room.getRoomType().getId() != null) {
                 RoomType validRoomType = roomTypeService.findById(room.getRoomType().getId());
                 existingRoom.setRoomType(validRoomType);
             }
 
-            // GIẢI QUYẾT LỖI 3: Đồng bộ logic lưu ảnh đại diện mới hoặc giữ nguyên ảnh Cloudinary cũ
             if (imageFile != null && !imageFile.isEmpty()) {
                 String cloudImageUrl = cloudStorageService.uploadImage(imageFile);
                 existingRoom.setImage(cloudImageUrl);
             }
-            // Nếu không chọn file mới, existingRoom vẫn giữ nguyên link ảnh cũ sẵn có trong DB
 
-            // Cập nhật toàn bộ các trường thông tin thay đổi từ form vào dữ liệu gốc DB
             existingRoom.setRoomName(room.getRoomName());
             existingRoom.setPrice(room.getPrice());
             existingRoom.setComputerCount(room.getComputerCount());
@@ -213,7 +182,9 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
-    // FIX LỖI 4: Định vị lại đường dẫn xóa chuẩn hóa ngắn gọn là /rooms/delete/{id}
+    // ==========================================
+    // 4. XÓA PHÒNG MÁY
+    // ==========================================
     @GetMapping("/delete/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public String deleteRoom(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
@@ -227,6 +198,56 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
+    // ==========================================
+    // 5. XEM CHI TIẾT PHÒNG
+    // ==========================================
+    @GetMapping("/room/detail/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        model.addAttribute("room", roomService.findById(id));
+        return "detail";
+    }
+
+    // ==========================================
+    // 6. CÁC HÀM TÌM KIẾM & LỌC DỮ LIỆU
+    // ==========================================
+    @GetMapping("/search")
+    public String search(@RequestParam(required = false) Double price, Model model) {
+        model.addAttribute("list", roomService.search(price));
+        model.addAttribute("price", price);
+        return "list";
+    }
+
+    @GetMapping("/status/{status}")
+    public String filterByStatus(@PathVariable RoomStatus status, Model model) {
+        model.addAttribute("list", roomService.findByStatus(status));
+        model.addAttribute("selectedStatus", status);
+        return "list";
+    }
+
+    @GetMapping("/rooms/search")
+    public String searchRooms(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) RoomStatus status,
+            @RequestParam(required = false) String roomType,
+            Model model) {
+        if (keyword != null && keyword.trim().isEmpty()) {
+            keyword = null;
+        }
+        if (roomType != null && roomType.trim().isEmpty()) {
+            roomType = null;
+        }
+
+        model.addAttribute("list", roomService.searchRooms(keyword, status, roomType));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedRoomType", roomType);
+
+        return "list";
+    }
+
+    // ==========================================
+    // 7. THAY ĐỔI TRẠNG THÁI & ĐẶT TRƯỚC
+    // ==========================================
     @GetMapping("/change-status/{id}/{status}")
     @PreAuthorize("hasRole('ADMIN')")
     public String changeStatus(@PathVariable("id") Long id,
@@ -253,7 +274,6 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
-    // CHỨC NĂNG ĐẶT TRƯỚC PHÒNG
     @GetMapping("/reserve")
     @PreAuthorize("hasRole('ADMIN')")
     public String reserveRoom(@RequestParam("roomId") Long roomId, RedirectAttributes redirectAttributes) {
@@ -266,6 +286,9 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
+    // ==========================================
+    // 8. DỮ LIỆU CHUNG (CẢNH BÁO KHO & HẾT GIỜ)
+    // ==========================================
     @ModelAttribute
     public void addCommonAttributes(Model model) {
         List<Room> allRooms = roomService.getAll();
@@ -275,5 +298,18 @@ public class RoomController {
         model.addAttribute("maintenanceCount", allRooms.stream().filter(r -> r.getStatus() == RoomStatus.MAINTENANCE).count());
         model.addAttribute("reservedCount", allRooms.stream().filter(r -> r.getStatus() == RoomStatus.RESERVED).count());
         model.addAttribute("allCount", allRooms.size());
+
+        long lowStockCount = productService.getAllProducts().stream()
+                .filter(p -> p.getStockQuantity() != null && p.getStockQuantity() <= 10)
+                .count();
+        model.addAttribute("lowStockCount", lowStockCount);
+
+        List<Room> almostOvertimeRooms = allRooms.stream()
+                .filter(r -> r.getStatus() == RoomStatus.OCCUPIED)
+                .filter(r -> r.getActiveCheckIn() != null && r.getActiveCheckIn().isAlmostOvertime())
+                .collect(Collectors.toList());
+
+        model.addAttribute("almostOvertimeRooms", almostOvertimeRooms);
+        model.addAttribute("almostOvertimeCount", almostOvertimeRooms.size());
     }
 }

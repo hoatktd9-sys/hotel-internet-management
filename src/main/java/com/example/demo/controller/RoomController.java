@@ -1,12 +1,16 @@
 package com.example.demo.controller;
 
 import com.example.demo.enumtype.RoomStatus;
+import com.example.demo.model.CheckIn; // <-- ĐÃ FIX: Thêm dòng import thực thể CheckIn
+import com.example.demo.model.Customer; // Thêm dòng import thực thể Customer để dùng cho xử lý lưu
 import com.example.demo.model.Room;
 import com.example.demo.model.RoomType;
 import com.example.demo.service.CloudStorageService;
 import com.example.demo.service.ProductService;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.RoomTypeService;
+import com.example.demo.service.CustomerService; // Thêm service quản lý khách hàng
+import com.example.demo.service.CheckInService;   // Thêm service quản lý checkin/đặt phòng
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -27,16 +31,23 @@ public class RoomController {
     private final RoomTypeService roomTypeService;
     private final ProductService productService;
     private final CloudStorageService cloudStorageService;
+    private final CustomerService customerService; // Khai báo thêm
+    private final CheckInService checkInService;   // Khai báo thêm
 
+    // Đã cập nhật Constructor để Spring tự động Injection (Tiêm) các Service mới vào
     public RoomController(
             RoomService roomService,
             RoomTypeService roomTypeService,
             ProductService productService,
-            CloudStorageService cloudStorageService) {
+            CloudStorageService cloudStorageService,
+            CustomerService customerService,
+            CheckInService checkInService) {
         this.roomService = roomService;
         this.roomTypeService = roomTypeService;
         this.productService = productService;
         this.cloudStorageService = cloudStorageService;
+        this.customerService = customerService;
+        this.checkInService = checkInService;
     }
 
     // ==========================================
@@ -101,7 +112,7 @@ public class RoomController {
             }
 
             roomService.save(room);
-            redirectAttributes.addFlashAttribute("success", "Thêm phòng máy mới thành công!");
+            redirectAttributes.addFlashAttribute("success", "Thêm phòng máy mới thành open thành công!");
         } catch (Exception e) {
             e.printStackTrace();
             model.addAttribute("error", "Lỗi khi thêm phòng: " + e.getMessage());
@@ -274,14 +285,59 @@ public class RoomController {
         return "redirect:/rooms";
     }
 
+    // A. HIỂN THỊ FORM ĐẶT TRƯỚC PHÒNG (SỬA LẠI ĐỂ TRẢ VỀ FORM HTML)
     @GetMapping("/reserve")
     @PreAuthorize("hasRole('ADMIN')")
-    public String reserveRoom(@RequestParam("roomId") Long roomId, RedirectAttributes redirectAttributes) {
+    public String showReserveForm(@RequestParam("roomId") Long roomId, Model model, RedirectAttributes redirectAttributes) {
         try {
+            // Nạp dữ liệu khách hàng và phòng để đưa vào giao diện revese.html
+            model.addAttribute("rooms", roomService.findAll());
+            model.addAttribute("customers", customerService.findAll());
+            model.addAttribute("selectedRoomId", roomId);
+
+            // Trả về chính xác đường dẫn file template: templates/checkin/reserve.html
+            return "checkin/reserve";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Không thể mở form đặt phòng: " + e.getMessage());
+            return "redirect:/rooms";
+        }
+    }
+
+    // B. TIẾP NHẬN DỮ LIỆU TỪ FORM ĐẶT PHÒNG VÀ LƯU VÀO CƠ SỞ DỮ LIỆU
+    @PostMapping("/reserve/save")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String saveReservation(
+            @RequestParam("customerId") Long customerId,
+            @RequestParam("roomId") Long roomId,
+            @RequestParam("checkInTimeStr") String checkInTimeStr,
+            @RequestParam("expectedHours") Double expectedHours,
+            RedirectAttributes redirectAttributes) {
+        try {
+            CheckIn booking = new CheckIn();
+
+            Customer customer = customerService.findById(customerId);
+            booking.setCustomer(customer);
+
+            Room room = roomService.findById(roomId);
+            booking.setRoom(room);
+
+            // Chuyển đổi chuỗi String thời gian từ giao diện (datetime-local) sang LocalDateTime
+            java.time.LocalDateTime checkInTime = java.time.LocalDateTime.parse(checkInTimeStr);
+            booking.setCheckInTime(checkInTime);
+            booking.setExpectedHours(expectedHours);
+            booking.setStatus("RESERVED");
+
+            // Lưu hóa đơn đặt phòng vào DB
+            checkInService.save(booking);
+
+            // Đổi trạng thái phòng sang RESERVED (Đặt trước)
             roomService.updateStatus(roomId, RoomStatus.RESERVED);
+
             redirectAttributes.addFlashAttribute("success", "Đã đặt trước phòng máy thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Không thể đặt trước phòng: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Lỗi xử lý lưu thông tin đặt phòng: " + e.getMessage());
         }
         return "redirect:/rooms";
     }

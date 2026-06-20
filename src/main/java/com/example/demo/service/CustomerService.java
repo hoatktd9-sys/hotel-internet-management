@@ -57,17 +57,35 @@ public class CustomerService {
         );
     }
 
-    // ===== ĐÁNH DẤU / HỦY VIP (MỚI THÊM) =====
+    // ===== 1. ĐÁNH DẤU / HỦY VIP (ĐÃ SỬA HẾT LỖI BÁO ĐỎ) =====
     public void toggleVip(Long id) {
         Customer customer = findById(id);
-        customer.setVip(!customer.isVip()); // Đảo ngược trạng thái hiện tại
+
+        boolean currentVip = false;
+        try {
+            // Nếu dữ liệu cũ trong DB bị lỗi Null, khối catch sẽ bắt lại
+            currentVip = customer.isVip();
+        } catch (Exception e) {
+            currentVip = false;
+        }
+
+        customer.setVip(!currentVip);
         repository.save(customer);
     }
 
-    // ===== KHÓA / MỞ KHÓA KHÁCH HÀNG (MỚI THÊM) =====
+    // ===== 2. ĐÁNH DẤU / HỦY KÍCH HOẠT (ĐÃ SỬA HẾT LỖI BÁO ĐỎ) =====
     public void toggleActive(Long id) {
         Customer customer = findById(id);
-        customer.setActive(!customer.isActive()); // Đảo ngược trạng thái hoạt động
+
+        boolean currentActive = false;
+        try {
+            // Nếu dữ liệu cũ trong DB bị lỗi Null, khối catch sẽ bắt lại
+            currentActive = customer.isActive();
+        } catch (Exception e) {
+            currentActive = false;
+        }
+
+        customer.setActive(!currentActive);
         repository.save(customer);
     }
 }
